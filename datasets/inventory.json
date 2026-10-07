@@ -1,0 +1,172 @@
+{
+  "scope": "File organization, checksums, CQT extraction and metadata coverage; no training or new split.",
+  "publisher_checksum_source": "https://zenodo.org/records/14794592",
+  "original_files": {
+    "cqt5.zip": {
+      "path": "archives/cqt5.zip",
+      "bytes": 2078423950,
+      "md5": "5234c456665b0e168d0249ccb93dda7f",
+      "sha256": "985934597e644d44882da983ac10338e81955ac9746145f446abaea1f3df3d78",
+      "publisher_md5_match": true
+    },
+    "mid.zip": {
+      "path": "archives/mid.zip",
+      "bytes": 52062996,
+      "md5": "8e6c4113c09f561336c688021e5cefa1",
+      "sha256": "2142b223650e35b2692798169f59269ae11e0b39f75ffa9decaa9045ec636a02",
+      "publisher_md5_match": true
+    },
+    "pianoroll5.zip": {
+      "path": "archives/pianoroll5.zip",
+      "bytes": 76734269,
+      "md5": "32a8fb39efe4bec7010b1eaf89716587",
+      "sha256": "0746533b7d2ddb8a00aeab94580cd1fd0862ee5beaf4c65d38dfe0844c1f8acf",
+      "publisher_md5_match": true
+    },
+    "new_clean_data.json": {
+      "path": "metadata/new_clean_data.json",
+      "bytes": 12041667,
+      "md5": "26c61fabae340639e202803ad45efc8d",
+      "sha256": "077be96e60d8e4e7feb88400d7a053ebdefc26f3540a3807a684335c88b109c9",
+      "publisher_md5_match": true
+    },
+    "split_audio.json": {
+      "path": "metadata/split_audio.json",
+      "bytes": 2296537,
+      "md5": "63091f9b8036cba2d83e499dab72ce21",
+      "sha256": "c60881a52492dd7e7e7356ab5b5465ab215b9e71f137bf5d8ff969883b035a03",
+      "publisher_md5_match": true
+    }
+  },
+  "archives": {
+    "cqt5.zip": {
+      "files": 7901,
+      "uncompressed_bytes": 2354804668,
+      "extracted": true,
+      "all_extracted_members_crc_verified": true
+    },
+    "mid.zip": {
+      "files": 7901,
+      "uncompressed_bytes": 70147222,
+      "extracted": false
+    },
+    "pianoroll5.zip": {
+      "files": 15834,
+      "uncompressed_bytes": 9464864674,
+      "extracted": false
+    }
+  },
+  "metadata_records": 7901,
+  "grade_field": "ps",
+  "grade_counts": {
+    "0": 224,
+    "1": 581,
+    "2": 589,
+    "3": 792,
+    "4": 796,
+    "5": 887,
+    "6": 842,
+    "7": 858,
+    "8": 795,
+    "9": 586,
+    "10": 951
+  },
+  "cqt_records": 7901,
+  "cqt_metadata_keys_match": true,
+  "cqt_format": "Observed .bin sample contains pickle-serialized NumPy ndarray; no pickle executed.",
+  "official_splits": {
+    "0": {
+      "counts": {
+        "train": 4736,
+        "val": 1576,
+        "test": 1589
+      },
+      "record_key_overlap": {
+        "train/val": 0,
+        "train/test": 0,
+        "val/test": 0
+      },
+      "composer_string_overlap": {
+        "train/val": 377,
+        "train/test": 378,
+        "val/test": 271
+      }
+    },
+    "1": {
+      "counts": {
+        "train": 4736,
+        "val": 1576,
+        "test": 1589
+      },
+      "record_key_overlap": {
+        "train/val": 0,
+        "train/test": 0,
+        "val/test": 0
+      },
+      "composer_string_overlap": {
+        "train/val": 368,
+        "train/test": 357,
+        "val/test": 269
+      }
+    },
+    "2": {
+      "counts": {
+        "train": 4736,
+        "val": 1576,
+        "test": 1589
+      },
+      "record_key_overlap": {
+        "train/val": 0,
+        "train/test": 0,
+        "val/test": 0
+      },
+      "composer_string_overlap": {
+        "train/val": 365,
+        "train/test": 357,
+        "val/test": 258
+      }
+    },
+    "3": {
+      "counts": {
+        "train": 4736,
+        "val": 1576,
+        "test": 1589
+      },
+      "record_key_overlap": {
+        "train/val": 0,
+        "train/test": 0,
+        "val/test": 0
+      },
+      "composer_string_overlap": {
+        "train/val": 358,
+        "train/test": 364,
+        "val/test": 265
+      }
+    },
+    "4": {
+      "counts": {
+        "train": 4736,
+        "val": 1576,
+        "test": 1589
+      },
+      "record_key_overlap": {
+        "train/val": 0,
+        "train/test": 0,
+        "val/test": 0
+      },
+      "composer_string_overlap": {
+        "train/val": 366,
+        "train/test": 381,
+        "val/test": 276
+      }
+    }
+  },
+  "official_splits_are_composer_disjoint": false,
+  "original_audio_files_present": false,
+  "verification_limits": [
+    "CQT values not deserialized or musically validated.",
+    "MIDI and piano roll kept compressed; publisher MD5 verified, contents not decoded.",
+    "Composer comparison uses exact metadata strings, not identity normalization.",
+    "No project-specific composer-disjoint split generated."
+  ]
+}

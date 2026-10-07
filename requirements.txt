@@ -1,0 +1,12 @@
+# Suggested development dependencies; not a verified lockfile.
+# Use an isolated Python 3.11/3.12 environment and verify before pinning.
+numpy
+scipy
+scikit-learn
+librosa
+soundfile
+matplotlib
+jupyterlab
+pytest
+
+# Add an ordinal-regression library only after selecting and testing it.
