@@ -1,12 +1,14 @@
-# Suggested development dependencies; not a verified lockfile.
-# Use an isolated Python 3.11/3.12 environment and verify before pinning.
-numpy
-scipy
-scikit-learn
-librosa
-soundfile
-matplotlib
-jupyterlab
-pytest
-
-# Add an ordinal-regression library only after selecting and testing it.
+# Tested baseline environment: Python 3.14.7 on macOS arm64.
+# Exact installed versions for this CQT-only run, including transitive deps.
+cloudpickle==3.1.2
+iniconfig==2.3.1
+joblib==1.6.0
+narwhals==2.27.0
+numpy==2.5.3
+packaging==26.3
+pluggy==1.6.0
+Pygments==2.21.0
+pytest==9.1.1
+scikit-learn==1.9.1
+scipy==1.18.1
+threadpoolctl==3.7.0

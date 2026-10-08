@@ -1,0 +1,86 @@
+{
+  "feature_group": "cqt_only",
+  "model": "StandardScaler + Ridge(solver=svd)",
+  "chosen_alpha": 10,
+  "selection": "validation Tau-c, then lower validation MSE",
+  "alphas": [
+    0.1,
+    1,
+    10,
+    100,
+    1000
+  ],
+  "python": "3.14.7",
+  "versions": {
+    "numpy": "2.5.3",
+    "scipy": "1.18.1",
+    "scikit-learn": "1.9.1",
+    "joblib": "1.6.0"
+  },
+  "features_file": "/Users/lyujiahang/Desktop/ML Master Program/DT2470 Music Informatics/Project/datasets/features/cqt_stats.npz",
+  "features_sha256": "09af7940355c5b04c540d6ee8f11e547c1fe257c513d26b57f79b306046337f4",
+  "split_file": "/Users/lyujiahang/Desktop/ML Master Program/DT2470 Music Informatics/Project/datasets/splits/cqt_composer_split.json",
+  "split_sha256": "b303a01c7cc462d6df1a915f9c1b500338ede70265c75f7dcfae3a2d6c876547",
+  "split_seed": 42,
+  "metadata_sha256": "077be96e60d8e4e7feb88400d7a053ebdefc26f3540a3807a684335c88b109c9",
+  "sizes": {
+    "train": 4211,
+    "val": 2095,
+    "test": 1595
+  },
+  "grade_counts": {
+    "train": {
+      "0": 144,
+      "1": 304,
+      "2": 326,
+      "3": 398,
+      "4": 373,
+      "5": 522,
+      "6": 455,
+      "7": 476,
+      "8": 464,
+      "9": 316,
+      "10": 433
+    },
+    "val": {
+      "0": 32,
+      "1": 144,
+      "2": 134,
+      "3": 176,
+      "4": 228,
+      "5": 192,
+      "6": 212,
+      "7": 227,
+      "8": 218,
+      "9": 180,
+      "10": 352
+    },
+    "test": {
+      "0": 48,
+      "1": 133,
+      "2": 129,
+      "3": 218,
+      "4": 195,
+      "5": 173,
+      "6": 175,
+      "7": 155,
+      "8": 113,
+      "9": 90,
+      "10": 166
+    }
+  },
+  "preprocessing": "176 features: 88 temporal dB means + 88 population stds; scaler fitted on train only",
+  "metric_conventions": "Raw Ridge scores for Tau-c/Spearman/MAE/MSE; Acc±1 clips to 0..10 then floor(x+0.5)",
+  "limitations": [
+    "Single fixed split; not official MIREX evaluation.",
+    "All available CQT records; later rhythm comparison must use same common audio subset.",
+    "Composer strings normalized for Unicode/case/whitespace, not musicological aliases.",
+    "Ridge/MSE treat integer grades numerically; this is a baseline, not interval-free modeling."
+  ],
+  "code_sha256": {
+    "evaluate.py": "22db9369b26e0b804f53a088e6c43e9e0d4a8a2cbfd689ee06114f6eaf171521",
+    "features_cqt.py": "5138ffe94558906740be4d90dc58543b5e744e4aa4bc91fe426283182c4f15ca",
+    "split_data.py": "1068a02825be578a478ba6772cda998ea09caf34e076aceba85263a70a17f97c",
+    "train.py": "1bfc702116d8818f45c6eb3b5d03c97290eb87c6628511a99a06416805661a95"
+  }
+}

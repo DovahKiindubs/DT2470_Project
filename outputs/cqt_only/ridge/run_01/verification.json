@@ -1,0 +1,14 @@
+{
+  "feature_matrix_shape": [
+    7901,
+    176
+  ],
+  "unit_and_cli_tests_passed": 21,
+  "full_real_validation_run": "PASS",
+  "saved_model_prediction_roundtrip": "PASS",
+  "train_only_scaler": "PASS",
+  "independent_mae_mse_acc_tau_recalculation": "PASS",
+  "source_feature_samples_recomputed": 3,
+  "split_record_composer_video_overlap": 0,
+  "real_test_set_evaluated": false
+}

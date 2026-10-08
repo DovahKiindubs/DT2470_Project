@@ -74,8 +74,5 @@ dist/
 *.7z
 
 # Keep small summary metrics and report figures; exclude bulk local runs.
-/outputs/models/
-/outputs/predictions/
-/outputs/cache/
-/outputs/runs/
+/outputs/**/predictions_*.json
 *.log
