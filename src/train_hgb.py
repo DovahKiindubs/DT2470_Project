@@ -43,8 +43,10 @@ def run(args):
         metadata_hash = str(data['metadata_sha256'].item())
     if metadata_hash != sha256(args.metadata):
         raise ValueError('Metadata changed since feature extraction')
-    if X.shape != (len(ids), 176) or y.shape != (len(ids),) or not np.isfinite(X).all():
+    if X.ndim != 2 or X.shape != (len(ids), len(feature_names)) or y.shape != (len(ids),) or not np.isfinite(X).all():
         raise ValueError('Unexpected or non-finite feature cache')
+    if not feature_names or len(set(ids)) != len(ids):
+        raise ValueError('Missing feature names or duplicate ids')
     if set(ids) != set(metadata) or not np.array_equal(y, [int(metadata[k]['ps']) for k in ids]):
         raise ValueError('Feature/label/metadata alignment failed')
     split_doc = json.loads(args.split.read_text(encoding='utf-8'))
@@ -96,7 +98,8 @@ def run(args):
         'split_seed': split_doc['seed'], 'model_seed': args.seed,
         'metadata_sha256': metadata_hash,
         'sizes': {name: len(ix) for name, ix in indices.items()},
-        'preprocessing': 'Same 176 CQT temporal statistics as Ridge; no StandardScaler for trees',
+        'n_features': len(feature_names),
+        'preprocessing': f'{len(feature_names)} cached CQT features; no StandardScaler for trees',
         'metric_conventions': 'Raw model scores for Tau-c/Spearman/MAE/MSE; Acc±1 clips to 0..10 then floor(x+0.5)',
         'limitations': ['Single fixed split; not official MIREX evaluation.',
                         'Validation set used to select one of five tree-complexity candidates.',

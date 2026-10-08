@@ -38,9 +38,9 @@ def run(args):
         metadata_hash = str(data['metadata_sha256'].item())
     if metadata_hash != sha256(args.metadata):
         raise ValueError('Metadata changed since feature extraction; rebuild the cache')
-    if X.ndim != 2 or X.shape != (len(ids), 176) or y.shape != (len(ids),):
+    if X.ndim != 2 or X.shape != (len(ids), len(feature_names)) or y.shape != (len(ids),):
         raise ValueError('Unexpected CQT feature cache shape')
-    if not np.isfinite(X).all() or len(set(ids)) != len(ids) or len(feature_names) != 176:
+    if not np.isfinite(X).all() or len(set(ids)) != len(ids) or not feature_names:
         raise ValueError('Invalid features, duplicate ids or feature names')
     if set(ids) != set(metadata) or not np.array_equal(y, [int(metadata[k]['ps']) for k in ids]):
         raise ValueError('Feature/label/metadata alignment failed')
@@ -104,7 +104,8 @@ def run(args):
         'split_file': str(args.split.resolve()), 'split_sha256': sha256(args.split),
         'split_seed': split_doc['seed'], 'metadata_sha256': metadata_hash,
         'sizes': {name: len(ix) for name, ix in indices.items()}, 'grade_counts': coverage,
-        'preprocessing': '176 features: 88 temporal dB means + 88 population stds; scaler fitted on train only',
+        'n_features': len(feature_names),
+        'preprocessing': f'{len(feature_names)} cached CQT features; scaler fitted on train only',
         'metric_conventions': 'Raw Ridge scores for Tau-c/Spearman/MAE/MSE; Acc±1 clips to 0..10 then floor(x+0.5)',
         'limitations': ['Single fixed split; not official MIREX evaluation.',
                        'All available CQT records; later rhythm comparison must use same common audio subset.',

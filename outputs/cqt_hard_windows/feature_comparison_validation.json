@@ -1,0 +1,24 @@
+{
+  "scope": "Same strict split; validation only; test not evaluated",
+  "feature_sets": {
+    "global_176": "88 full-piece CQT-dB means + 88 full-piece population standard deviations",
+    "hard_windows_528": "global_176 + elementwise mean and max of statistics from the top 20% 10-second overlapping windows ranked by mean positive adjacent-frame CQT-dB difference"
+  },
+  "window_parameters": {
+    "assumed_frame_rate_hz": 5,
+    "window_frames": 50,
+    "hop_frames": 25,
+    "window_seconds": 10,
+    "hop_seconds": 5,
+    "hard_fraction": 0.2
+  },
+  "ridge": {
+    "global_176": {"alpha": 10, "kendall_tau_c": 0.568854905132689, "spearman": 0.723594851957102, "mae": 1.6444764726532566, "mse": 4.1731847218000375, "acc_pm1": 0.5193317422434367},
+    "hard_windows_528": {"alpha": 1000, "kendall_tau_c": 0.6432825513639134, "spearman": 0.7908114966791987, "mae": 1.4579928156573787, "mse": 3.456495582777992, "acc_pm1": 0.6090692124105012}
+  },
+  "hist_gradient_boosting": {
+    "global_176": {"max_leaf_nodes": 31, "kendall_tau_c": 0.6078120767140767, "spearman": 0.7579156306545574, "mae": 1.5444379343050478, "mse": 3.718091785326928, "acc_pm1": 0.5651551312649165},
+    "hard_windows_528": {"max_leaf_nodes": 31, "kendall_tau_c": 0.6533707144525265, "spearman": 0.7973818814918098, "mae": 1.3802121503384257, "mse": 3.1410591420848113, "acc_pm1": 0.6295942720763723}
+  },
+  "interpretation": "Hard-window pooling improves both models on this validation split. It supports the hypothesis that local CQT variation is useful, but does not prove generalization and is not equivalent to raw-audio rhythm features or a full sequence model."
+}

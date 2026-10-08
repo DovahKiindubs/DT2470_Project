@@ -1,0 +1,43 @@
+{
+  "feature_shape": [
+    7901,
+    528
+  ],
+  "feature_parameters": {
+    "frame_rate_assumption_hz": 5,
+    "window_frames": 50,
+    "hop_frames": 25,
+    "hard_fraction": 0.2,
+    "difficulty_proxy": "mean positive adjacent-frame CQT-dB difference",
+    "pooling": "global summary + hard-window summary mean + elementwise max"
+  },
+  "models": {
+    "ridge": {
+      "model_roundtrip": "PASS",
+      "independent_mae_mse": "PASS",
+      "metrics": {
+        "n": 2095,
+        "kendall_tau_c": 0.6432825513639134,
+        "spearman": 0.7908114966791987,
+        "mae": 1.4579928156573787,
+        "mse": 3.456495582777992,
+        "acc_pm1": 0.6090692124105012,
+        "correlation_note": null
+      }
+    },
+    "hgb": {
+      "model_roundtrip": "PASS",
+      "independent_mae_mse": "PASS",
+      "metrics": {
+        "n": 2095,
+        "kendall_tau_c": 0.6533707144525265,
+        "spearman": 0.7973818814918098,
+        "mae": 1.3802121503384257,
+        "mse": 3.1410591420848113,
+        "acc_pm1": 0.6295942720763723,
+        "correlation_note": null
+      }
+    }
+  },
+  "test_evaluated": false
+}

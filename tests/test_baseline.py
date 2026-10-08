@@ -12,6 +12,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT/'src'))
 from features_cqt import ArrayUnpickler, extract, sha256, summarize_cqt
+from features_cqt_windows import spectral_flux_score, summarize_hard_windows, window_starts
 from evaluate import evaluate
 from split_data import make_groups, make_split, recording_id, validate_split
 from train import build_model
@@ -24,6 +25,34 @@ def test_cqt_summary_and_order():
     assert f.shape == (176,)
     np.testing.assert_allclose(f[:88], 0)
     np.testing.assert_allclose(f[88:], np.sqrt(5))
+
+
+def test_window_starts_cover_tail_and_short_piece():
+    assert window_starts(20, 50, 25) == [0]
+    assert window_starts(100, 50, 25) == [0, 25, 50]
+    assert window_starts(101, 50, 25) == [0, 25, 50, 51]
+
+
+def test_hard_window_pooling_selects_local_change():
+    cqt = np.zeros((88, 12), dtype=float)
+    cqt[:, 8:] = np.array([0., 10., 0., 10.])
+    features, info = summarize_hard_windows(cqt, window_frames=4, hop_frames=4, hard_fraction=1/3)
+    assert features.shape == (528,)
+    assert info['n_windows'] == 3 and info['n_hard_windows'] == 1
+    assert spectral_flux_score(cqt[:, 8:]) > spectral_flux_score(cqt[:, :4])
+    expected = summarize_cqt(cqt[:, 8:])
+    np.testing.assert_allclose(features[176:352], expected)
+    np.testing.assert_allclose(features[352:], expected)
+
+
+def test_hard_window_features_change_when_time_is_shuffled():
+    cqt = np.tile(np.arange(20, dtype=float), (88, 1))
+    shuffled = cqt[:, ::-1]
+    # 全局均值/std 相同，但正向变化代理与困难窗口池化不同。
+    np.testing.assert_allclose(summarize_cqt(cqt), summarize_cqt(shuffled))
+    f1, _ = summarize_hard_windows(cqt, 5, 5, 0.25)
+    f2, _ = summarize_hard_windows(shuffled, 5, 5, 0.25)
+    assert not np.allclose(f1, f2)
 
 
 @pytest.mark.parametrize('cqt', [np.zeros((0, 88)), np.zeros((88, 0)),
