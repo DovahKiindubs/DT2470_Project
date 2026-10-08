@@ -1,0 +1,11 @@
+{
+  "same_feature_hash": true,
+  "same_split_hash": true,
+  "same_sizes": true,
+  "validation_rows": 2095,
+  "saved_model_roundtrip": "PASS",
+  "independent_mae_mse_recalculation": "PASS",
+  "selected_candidate_verified": 31,
+  "test_evaluated": false,
+  "tests_passed": 22
+}

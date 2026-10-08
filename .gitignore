@@ -30,20 +30,11 @@ dist/
 
 # Local datasets: keep directory markers and documentation only.
 /datasets/audio/*
-!/datasets/audio/.gitkeep
-/datasets/cqt/*
-!/datasets/cqt/.gitkeep
-/datasets/features/*
-!/datasets/features/.gitkeep
-/datasets/metadata/*
-!/datasets/metadata/.gitkeep
+/datasets/features/cqt/
 /datasets/archives/*
-!/datasets/archives/.gitkeep
 /datasets/*.zip
 /datasets/*.tar*
 /datasets/*.7z
-/datasets/new_clean_data.json
-/datasets/split_audio.json
 
 # Large media, feature arrays, model checkpoints and archives anywhere.
 *.wav

@@ -1,0 +1,31 @@
+{
+  "scope": "Same frozen CQT features and split; validation results only",
+  "test_evaluated": false,
+  "n_validation": 2095,
+  "models": {
+    "ridge": {
+      "selected_parameter": {"alpha": 10},
+      "kendall_tau_c": 0.568854905132689,
+      "spearman": 0.723594851957102,
+      "mae": 1.6444764726532566,
+      "mse": 4.1731847218000375,
+      "acc_pm1": 0.5193317422434367
+    },
+    "hist_gradient_boosting": {
+      "selected_parameter": {"max_leaf_nodes": 31},
+      "kendall_tau_c": 0.6078120767140767,
+      "spearman": 0.7579156306545574,
+      "mae": 1.5444379343050478,
+      "mse": 3.718091785326928,
+      "acc_pm1": 0.5651551312649165
+    }
+  },
+  "hist_gradient_boosting_minus_ridge": {
+    "kendall_tau_c": 0.03895717158138767,
+    "spearman": 0.03432077869745543,
+    "mae": -0.10003853834820884,
+    "mse": -0.4550929364731093,
+    "acc_pm1": 0.0458233890214798
+  },
+  "interpretation": "HGB performs better on this validation split. This is model selection evidence, not a final test result or proof of generalization."
+}

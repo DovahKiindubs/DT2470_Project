@@ -15,6 +15,7 @@ from features_cqt import ArrayUnpickler, extract, sha256, summarize_cqt
 from evaluate import evaluate
 from split_data import make_groups, make_split, recording_id, validate_split
 from train import build_model
+from train_hgb import build_hgb
 
 
 def test_cqt_summary_and_order():
@@ -145,3 +146,40 @@ def test_train_cli_and_model_roundtrip(tmp_path):
     test_command[test_command.index('--output')+1] = str(final)
     subprocess.run(test_command+['--evaluate-test'], check=True, capture_output=True, text=True)
     assert json.loads((final/'metrics.json').read_text())['test_evaluated'] is True
+
+
+def test_hgb_builder_and_cli(tmp_path):
+    import joblib
+    model = build_hgb(7, max_iter=5, learning_rate=0.1, random_state=3)
+    assert model.max_leaf_nodes == 7 and model.early_stopping is False
+    ids = np.asarray([f'c{c}_g{g}' for c in range(10) for g in range(11)])
+    meta = {key: {'ps': str(i % 11), 'composer': f'composer{i//11}', 'youtube_link': ''}
+            for i, key in enumerate(ids)}
+    metadata = tmp_path/'meta.json'
+    metadata.write_text(json.dumps(meta))
+    y = np.arange(len(ids)) % 11
+    X = np.random.default_rng(1).normal(size=(len(ids), 176))
+    X[:, 0] = y
+    features = tmp_path/'features.npz'
+    np.savez(features, X=X, y=y, ids=ids, feature_names=np.asarray([f'f{i}' for i in range(176)]),
+             metadata_sha256=np.asarray(sha256(metadata)))
+    # 用同一分组函数冻结一个临时划分，HGB 必须复用它而非创建新划分。
+    split = tmp_path/'split.json'
+    parts = make_split(ids, make_groups(ids, meta))
+    split.write_text(json.dumps({'seed': 42, 'metadata_sha256': sha256(metadata), 'parts': parts}))
+    output = tmp_path/'hgb'
+    command = [sys.executable, '-W', 'error', str(ROOT/'src/train_hgb.py'),
+               '--features', str(features), '--metadata', str(metadata), '--split', str(split),
+               '--output', str(output), '--leaf-nodes', '7', '15', '--max-iter', '10']
+    subprocess.run(command, check=True, capture_output=True, text=True)
+    result = json.loads((output/'metrics.json').read_text())
+    assert result['test_evaluated'] is False and 'test' not in result
+    assert not (output/'predictions_test.json').exists()
+    config = json.loads((output/'config.json').read_text())
+    assert config['max_leaf_nodes_candidates'] == [7, 15]
+    artifact = joblib.load(output/'model.joblib')
+    assert artifact['model'].max_leaf_nodes == config['chosen_max_leaf_nodes']
+    rows = json.loads((output/'predictions_val.json').read_text())
+    lookup = {key: i for i, key in enumerate(ids)}
+    pred = artifact['model'].predict(X[[lookup[row['id']] for row in rows]])
+    np.testing.assert_allclose(pred, [row['score'] for row in rows])

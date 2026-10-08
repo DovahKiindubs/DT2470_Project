@@ -1,0 +1,56 @@
+{
+  "feature_group": "cqt_only",
+  "model": "HistGradientBoostingRegressor",
+  "chosen_max_leaf_nodes": 31,
+  "selection": "validation Tau-c, then lower validation MSE",
+  "max_leaf_nodes_candidates": [
+    7,
+    15,
+    31,
+    63,
+    127
+  ],
+  "fixed_parameters": {
+    "loss": "squared_error",
+    "learning_rate": 0.05,
+    "max_iter": 300,
+    "min_samples_leaf": 20,
+    "l2_regularization": 1.0,
+    "early_stopping": false,
+    "random_state": 42
+  },
+  "python": "3.14.7",
+  "versions": {
+    "numpy": "2.5.3",
+    "scipy": "1.18.1",
+    "scikit-learn": "1.9.1",
+    "joblib": "1.6.0"
+  },
+  "features_file": "/Users/lyujiahang/Desktop/ML Master Program/DT2470 Music Informatics/Project/datasets/features/cqt_stats.npz",
+  "features_sha256": "09af7940355c5b04c540d6ee8f11e547c1fe257c513d26b57f79b306046337f4",
+  "split_file": "/Users/lyujiahang/Desktop/ML Master Program/DT2470 Music Informatics/Project/datasets/splits/cqt_composer_split.json",
+  "split_sha256": "b303a01c7cc462d6df1a915f9c1b500338ede70265c75f7dcfae3a2d6c876547",
+  "split_seed": 42,
+  "model_seed": 42,
+  "metadata_sha256": "077be96e60d8e4e7feb88400d7a053ebdefc26f3540a3807a684335c88b109c9",
+  "sizes": {
+    "train": 4211,
+    "val": 2095,
+    "test": 1595
+  },
+  "preprocessing": "Same 176 CQT temporal statistics as Ridge; no StandardScaler for trees",
+  "metric_conventions": "Raw model scores for Tau-c/Spearman/MAE/MSE; Acc±1 clips to 0..10 then floor(x+0.5)",
+  "limitations": [
+    "Single fixed split; not official MIREX evaluation.",
+    "Validation set used to select one of five tree-complexity candidates.",
+    "Temporal order already removed by mean/std pooling.",
+    "Later rhythm comparison must use the same common audio subset."
+  ],
+  "code_sha256": {
+    "evaluate.py": "22db9369b26e0b804f53a088e6c43e9e0d4a8a2cbfd689ee06114f6eaf171521",
+    "features_cqt.py": "5138ffe94558906740be4d90dc58543b5e744e4aa4bc91fe426283182c4f15ca",
+    "split_data.py": "1068a02825be578a478ba6772cda998ea09caf34e076aceba85263a70a17f97c",
+    "train.py": "1bfc702116d8818f45c6eb3b5d03c97290eb87c6628511a99a06416805661a95",
+    "train_hgb.py": "090832d60e98665336a90a4d5e4d9b8d98410a68bb63d0e4d88aaee03f03d0d5"
+  }
+}
