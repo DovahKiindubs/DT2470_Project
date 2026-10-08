@@ -17,6 +17,7 @@ from evaluate import evaluate
 from split_data import make_groups, make_split, recording_id, validate_split
 from train import build_model
 from train_hgb import build_hgb
+from model_crnn import CQTCRNN, collate_sequences, downsample_lengths
 
 
 def test_cqt_summary_and_order():
@@ -175,6 +176,23 @@ def test_train_cli_and_model_roundtrip(tmp_path):
     test_command[test_command.index('--output')+1] = str(final)
     subprocess.run(test_command+['--evaluate-test'], check=True, capture_output=True, text=True)
     assert json.loads((final/'metrics.json').read_text())['test_evaluated'] is True
+
+
+def test_crnn_shapes_masks_and_backward():
+    import torch
+    torch.manual_seed(0)
+    batch = [(torch.randn(88, 54), torch.tensor(1.), 'a'),
+             (torch.randn(88, 101), torch.tensor(2.), 'b')]
+    x, lengths, labels, ids = collate_sequences(batch)
+    assert x.shape == (2, 88, 101) and ids == ['a', 'b']
+    assert downsample_lengths(lengths).tolist() == [14, 26]
+    model = CQTCRNN(conv_channels=8, hidden_size=6, dropout=0.)
+    score, weights, reduced = model(x, lengths, return_attention=True)
+    assert score.shape == (2,) and weights.shape == (2, 26)
+    np.testing.assert_allclose(weights.sum(1).detach().numpy(), [1, 1], atol=1e-6)
+    assert torch.all(weights[0, reduced[0]:] == 0)
+    ((score-labels)**2).mean().backward()
+    assert all(p.grad is not None and torch.isfinite(p.grad).all() for p in model.parameters())
 
 
 def test_hgb_builder_and_cli(tmp_path):

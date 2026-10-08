@@ -1,9 +1,13 @@
-# Tested baseline environment: Python 3.14.7 on macOS arm64.
-# Exact installed versions for this CQT-only run, including transitive deps.
 cloudpickle==3.1.2
+filelock==4.0.12
+fsspec==2026.9.0
 iniconfig==2.3.1
+Jinja2==3.1.6
 joblib==1.6.0
+MarkupSafe==3.0.4
+mpmath==1.3.0
 narwhals==2.27.0
+networkx==3.7
 numpy==2.5.3
 packaging==26.3
 pluggy==1.6.0
@@ -11,4 +15,8 @@ Pygments==2.21.0
 pytest==9.1.1
 scikit-learn==1.9.1
 scipy==1.18.1
+setuptools==84.0.0
+sympy==1.14.0
 threadpoolctl==3.7.0
+torch==2.14.1
+typing_extensions==4.16.0

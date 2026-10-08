@@ -9,6 +9,9 @@
 - `split_data.py`：作曲家名称进行 Unicode/大小写/空白归一化；相同作曲家或共用 YouTube 录音的条目归为同一组，冻结 train/val/test。仍不能代替作曲家别名和曲目身份的人工复核。
 - `train.py`：只在训练集拟合 StandardScaler 和 Ridge；在验证集比较 alpha；按 Tau-c 最大、MSE 最小的顺序选参，保存模型和运行记录。
 - `train_hgb.py`：复用相同特征和冻结划分，比较 5 个 `max_leaf_nodes` 候选；树模型不需要 StandardScaler，默认只评估验证集。
+- `prepare_crnn.py`：只用严格划分中的训练集全部有效帧，计算 88 个 CQT bin 的标准化统计。
+- `model_crnn.py`：变长 CQT Dataset、长度分桶、两层时间卷积、双向 GRU、掩码注意力和回归头。
+- `train_crnn.py`：支持 CUDA/MPS/CPU，CUDA 默认 AMP、pinned memory、多进程读取、验证集早停和最佳 checkpoint。
 - `evaluate.py`：统一计算 Kendall's Tau-c、Spearman、MAE、MSE 和 Acc±1。
 - `../tests/test_baseline.py`：特征、受限加载、标签对齐、分组、泄漏防护、指标及命令行端到端测试。
 
@@ -64,6 +67,19 @@ python src/train_hgb.py --evaluate-test --output outputs/cqt_only/hgb/final_run
 ```
 
 已有划分文件会优先复用，`--seed` 仅在首次创建划分时生效。不要通过重复换 seed 挑选更好结果。如果后续只下载到一部分音频，节奏对比必须在共同子集上重新跑 CQT 基线，并保持已有分组边界，而不是将全量 CQT 成绩直接与子集节奏成绩比较。
+
+## CRNN 服务器训练
+
+CRNN 直接读取完整 $88\times T$ CQT 序列，不使用 176/528 维缓存。结构为两层 stride-2 `Conv1d`、双向 GRU、掩码注意力和线性回归头。完整 A800 上传、CUDA 环境与命令见根目录 `CRNN_SERVER.md`。
+
+本地已用 CPU 完成 1 epoch smoke run，验证了数据加载、变长 padding/mask、前向反向、验证、早停、最佳 checkpoint 和安全回读。该 smoke run 的分数不作为正式 CRNN 结果。正式 A800 命令默认为：
+
+```bash
+python -u src/train_crnn.py --device cuda --batch-size 32 --num-workers 4 \
+  --max-epochs 30 --patience 5 --output outputs/cqt_crnn/a800_run_01
+```
+
+模型仍使用相同严格 split，并只以 validation Tau-c 选择 epoch；test 默认封存。
 
 ## 输出和指标口径
 

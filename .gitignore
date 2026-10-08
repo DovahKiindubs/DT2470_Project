@@ -36,34 +36,5 @@ dist/
 /datasets/*.tar*
 /datasets/*.7z
 
-# Large media, feature arrays, model checkpoints and archives anywhere.
-*.wav
-*.mp3
-*.flac
-*.m4a
-*.aac
-*.ogg
-*.opus
-*.webm
-*.mp4
-*.mid
-*.midi
-*.npy
-*.npz
-*.h5
-*.hdf5
-*.pkl
-*.pickle
-*.joblib
-*.pt
-*.pth
-*.ckpt
-*.zip
-*.tar
-*.tar.gz
-*.tgz
-*.7z
-
 # Keep small summary metrics and report figures; exclude bulk local runs.
-/outputs/**/predictions_*.json
 *.log
