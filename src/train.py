@@ -27,6 +27,24 @@ def build_model(alpha):
     return make_pipeline(StandardScaler(), Ridge(alpha=alpha, solver='svd'))
 
 
+def _feature_group_name(args):
+    name = args.features.name.lower()
+    if 'structure' in name:
+        base = 'structure'
+    elif 'rhythm' in name:
+        base = 'rhythm'
+    elif 'hard_windows' in name:
+        base = 'hard_windows'
+    else:
+        base = 'cqt'
+    parts = [base]
+    if args.rhythm_features and base != 'rhythm':
+        parts.append('rhythm')
+    if args.structure_features and base != 'structure':
+        parts.append('structure')
+    return '+'.join(parts)
+
+
 def run(args):
     if args.output.exists():
         raise FileExistsError(f'Choose a new run directory; refusing overwrite: {args.output}')
@@ -39,13 +57,15 @@ def run(args):
         parts = split_doc['parts']
         keys = sorted(set(parts['train']) | set(parts['val']) | set(parts['test']))
     else:
-        if args.rhythm_features is not None:
-            raise ValueError('Pass --split when using --rhythm-features')
+        extras = [p for p in (args.rhythm_features, args.structure_features) if p]
+        if extras:
+            raise ValueError('Pass --split when using extra feature groups')
         with np.load(args.features, allow_pickle=False) as data:
             keys = sorted(map(str, data['ids']))
         parts = split_doc = None
+    extras = [p for p in (args.rhythm_features, args.structure_features) if p]
     X, y, ids, feature_names, cache_hash = prepare_features(
-        args.features, metadata, keys, args.rhythm_features)
+        args.features, metadata, keys, extras)
     # 标签已对齐当前 metadata；split 用其记录的 hash（全量旧 split 或子集新 hash）。
     if parts is None:
         if cache_hash != current_hash:
@@ -104,13 +124,14 @@ def run(args):
             results['test'] = evaluate(y[ix], pred)
             results['mean_baseline_test'] = evaluate(y[ix], np.full(len(ix), mean_grade))
     config = {
-        'feature_group': 'cqt_rhythm' if args.rhythm_features else 'cqt_only',
+        'feature_group': _feature_group_name(args),
         'model': 'StandardScaler + Ridge(solver=svd)',
         'chosen_alpha': trials[winner]['alpha'], 'selection': 'validation Tau-c, then lower validation MSE',
         'alphas': sorted(set(args.alphas)), 'python': platform.python_version(),
         'versions': {p: version(p) for p in ('numpy', 'scipy', 'scikit-learn', 'joblib')},
         'features_file': str(args.features.resolve()), 'features_sha256': sha256(args.features),
         'rhythm_features_file': str(args.rhythm_features.resolve()) if args.rhythm_features else None,
+        'structure_features_file': str(args.structure_features.resolve()) if args.structure_features else None,
         'split_file': str(args.split.resolve()), 'split_sha256': sha256(args.split),
         'split_seed': split_doc['seed'], 'metadata_sha256': metadata_hash,
         'sizes': {name: len(ix) for name, ix in indices.items()}, 'grade_counts': coverage,
@@ -138,6 +159,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--features', type=Path, default=ROOT/'datasets/features/cqt_stats.npz')
     parser.add_argument('--rhythm-features', type=Path, default=None)
+    parser.add_argument('--structure-features', type=Path, default=None)
     parser.add_argument('--metadata', type=Path, default=ROOT/'datasets/metadata/new_clean_data.json')
     parser.add_argument('--split', type=Path, default=ROOT/'datasets/splits/cqt_composer_split.json')
     parser.add_argument('--output', type=Path, default=ROOT/'outputs/cqt_only/ridge/run_01')

@@ -1,0 +1,62 @@
+[
+  {
+    "max_leaf_nodes": 7,
+    "validation": {
+      "n": 2044,
+      "kendall_tau_c": 0.5772850517576144,
+      "spearman": 0.7277554677465947,
+      "mae": 1.6604774444452373,
+      "mse": 4.211755074841474,
+      "acc_pm1": 0.5107632093933464,
+      "correlation_note": null
+    }
+  },
+  {
+    "max_leaf_nodes": 15,
+    "validation": {
+      "n": 2044,
+      "kendall_tau_c": 0.6002374378161849,
+      "spearman": 0.7503167024030445,
+      "mae": 1.57852792991793,
+      "mse": 3.8709760480847235,
+      "acc_pm1": 0.5415851272015656,
+      "correlation_note": null
+    }
+  },
+  {
+    "max_leaf_nodes": 31,
+    "validation": {
+      "n": 2044,
+      "kendall_tau_c": 0.6068343794639267,
+      "spearman": 0.7571950723672176,
+      "mae": 1.5548820451125718,
+      "mse": 3.7612267972822813,
+      "acc_pm1": 0.5543052837573386,
+      "correlation_note": null
+    }
+  },
+  {
+    "max_leaf_nodes": 63,
+    "validation": {
+      "n": 2044,
+      "kendall_tau_c": 0.6053378510345778,
+      "spearman": 0.7566705097097454,
+      "mae": 1.5505687120398925,
+      "mse": 3.7531652114570937,
+      "acc_pm1": 0.5538160469667319,
+      "correlation_note": null
+    }
+  },
+  {
+    "max_leaf_nodes": 127,
+    "validation": {
+      "n": 2044,
+      "kendall_tau_c": 0.5849656864059191,
+      "spearman": 0.7359961779729259,
+      "mae": 1.6097926875361637,
+      "mse": 4.007681235151054,
+      "acc_pm1": 0.5342465753424658,
+      "correlation_note": null
+    }
+  }
+]

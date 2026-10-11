@@ -29,6 +29,24 @@ def build_hgb(max_leaf_nodes, max_iter=300, learning_rate=0.05, random_state=42)
     )
 
 
+def _feature_group_name(args):
+    name = args.features.name.lower()
+    if 'structure' in name:
+        base = 'structure'
+    elif 'rhythm' in name:
+        base = 'rhythm'
+    elif 'hard_windows' in name:
+        base = 'hard_windows'
+    else:
+        base = 'cqt'
+    parts = [base]
+    if args.rhythm_features and base != 'rhythm':
+        parts.append('rhythm')
+    if args.structure_features and base != 'structure':
+        parts.append('structure')
+    return '+'.join(parts)
+
+
 def run(args):
     if args.output.exists():
         raise FileExistsError(f'Choose a new run directory; refusing overwrite: {args.output}')
@@ -42,8 +60,9 @@ def run(args):
     split_doc = json.loads(args.split.read_text(encoding='utf-8'))
     parts = split_doc['parts']
     keys = sorted(set(parts['train']) | set(parts['val']) | set(parts['test']))
+    extras = [p for p in (args.rhythm_features, args.structure_features) if p]
     X, y, ids, feature_names, cache_hash = prepare_features(
-        args.features, metadata, keys, args.rhythm_features)
+        args.features, metadata, keys, extras)
     metadata_hash = split_doc['metadata_sha256']
     if metadata_hash not in (cache_hash, current_hash):
         raise ValueError('Metadata differs from frozen split')
@@ -80,7 +99,7 @@ def run(args):
             results['test'] = evaluate(y[ix], pred)
             results['mean_baseline_test'] = evaluate(y[ix], np.full(len(ix), mean_grade))
     config = {
-        'feature_group': 'cqt_rhythm' if args.rhythm_features else 'cqt_only',
+        'feature_group': _feature_group_name(args),
         'model': 'HistGradientBoostingRegressor',
         'chosen_max_leaf_nodes': trials[winner]['max_leaf_nodes'],
         'selection': 'validation Tau-c, then lower validation MSE',
@@ -92,6 +111,7 @@ def run(args):
         'versions': {p: version(p) for p in ('numpy', 'scipy', 'scikit-learn', 'joblib')},
         'features_file': str(args.features.resolve()), 'features_sha256': sha256(args.features),
         'rhythm_features_file': str(args.rhythm_features.resolve()) if args.rhythm_features else None,
+        'structure_features_file': str(args.structure_features.resolve()) if args.structure_features else None,
         'split_file': str(args.split.resolve()), 'split_sha256': sha256(args.split),
         'split_seed': split_doc['seed'], 'model_seed': args.seed,
         'metadata_sha256': metadata_hash,
@@ -122,6 +142,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--features', type=Path, default=ROOT/'datasets/features/cqt_stats.npz')
     parser.add_argument('--rhythm-features', type=Path, default=None)
+    parser.add_argument('--structure-features', type=Path, default=None)
     parser.add_argument('--metadata', type=Path, default=ROOT/'datasets/metadata/new_clean_data.json')
     parser.add_argument('--split', type=Path, default=ROOT/'datasets/splits/cqt_composer_split.json')
     parser.add_argument('--output', type=Path, default=ROOT/'outputs/cqt_only/hgb/run_01')

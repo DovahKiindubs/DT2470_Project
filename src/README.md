@@ -36,13 +36,19 @@ python src/features_rhythm.py
 python src/train.py
 python src/train_hgb.py
 
-# CQT+节奏（按 audio_composer_subset 内存拼接，不写中间 npz）
-python src/train.py --rhythm-features datasets/features/rhythm_stats.npz --split datasets/splits/audio_composer_subset.json --output outputs/cqt_rhythm/ridge/run_01
-python src/train_hgb.py --rhythm-features datasets/features/rhythm_stats.npz --split datasets/splits/audio_composer_subset.json --output outputs/cqt_rhythm/hgb/run_01
+# audio_composer_subset 消融：输出按特征组合分目录（内存拼接，不写中间 npz）
+# 例：CQT 全局 + 节奏
+python src/train.py --rhythm-features datasets/features/rhythm_stats.npz --split datasets/splits/audio_composer_subset.json --output outputs/audio_subset/cqt_rhythm/ridge/run_01
+python src/train_hgb.py --rhythm-features datasets/features/rhythm_stats.npz --split datasets/splits/audio_composer_subset.json --output outputs/audio_subset/cqt_rhythm/hgb/run_01
 
-# hard-windows + 节奏
-python src/train.py --features datasets/features/cqt_hard_windows.npz --rhythm-features datasets/features/rhythm_stats.npz --split datasets/splits/audio_composer_subset.json --output outputs/cqt_rhythm/hard_windows_rhythm/ridge/run_01
-python src/train_hgb.py --features datasets/features/cqt_hard_windows.npz --rhythm-features datasets/features/rhythm_stats.npz --split datasets/splits/audio_composer_subset.json --output outputs/cqt_rhythm/hard_windows_rhythm/hgb/run_01
+# 例：cqt hard-windows + 节奏
+python src/train.py --features datasets/features/cqt_hard_windows.npz --rhythm-features datasets/features/rhythm_stats.npz --split datasets/splits/audio_composer_subset.json --output outputs/audio_subset/cqt_hard_windows_rhythm/ridge/run_01
+python src/train_hgb.py --features datasets/features/cqt_hard_windows.npz --rhythm-features datasets/features/rhythm_stats.npz --split datasets/splits/audio_composer_subset.json --output outputs/audio_subset/cqt_hard_windows_rhythm/hgb/run_01
+
+# 例：仅节奏 / 仅结构 / 节奏+结构（主特征改指对应 npz）
+python src/train.py --features datasets/features/rhythm_stats.npz --split datasets/splits/audio_composer_subset.json --output outputs/audio_subset/rhythm/ridge/run_01
+python src/train.py --features datasets/features/structure_stats.npz --split datasets/splits/audio_composer_subset.json --output outputs/audio_subset/structure/ridge/run_01
+python src/train.py --features datasets/features/rhythm_stats.npz --structure-features datasets/features/structure_stats.npz --split datasets/splits/audio_composer_subset.json --output outputs/audio_subset/rhythm_structure/ridge/run_01
 
 # 滑窗困难片段池化：复用相同严格划分，仅评估验证集
 python src/train.py --features datasets/features/cqt_hard_windows.npz --output outputs/cqt_hard_windows/ridge/run_03 --alphas 100 300 1000 3000 10000
@@ -66,11 +72,13 @@ python -m pip check
 - 全局特征缓存：`datasets/features/cqt_stats.npz`
 - 滑窗困难片段特征缓存：`datasets/features/cqt_hard_windows.npz`
 - 节奏特征缓存：`datasets/features/rhythm_stats.npz`
+- 结构特征缓存：`datasets/features/structure_stats.npz`
 - 冻结划分：`datasets/splits/cqt_composer_split.json`
 - 音频共同子集划分：`datasets/splits/audio_composer_subset.json`
-- 全局统计结果：`outputs/cqt_only/`
-- 滑窗困难片段结果：`outputs/cqt_hard_windows/`
-- CQT+节奏结果：`outputs/cqt_rhythm/`
+- 全局统计结果（全量划分）：`outputs/cqt_only/`
+- 滑窗困难片段结果（全量划分）：`outputs/cqt_hard_windows/`
+- 子集消融结果：`outputs/audio_subset/<feature_combo>/{ridge,hgb}/run_XX/`
+- 子集对照表：`outputs/audio_subset/feature_comparison_validation.json`
 
 ## 已完成的初步验证
 

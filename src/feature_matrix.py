@@ -1,4 +1,4 @@
-"""按 split ids 选取特征，可选与 rhythm 内存拼接。"""
+"""按 split ids 选取特征，可选与多组附加特征内存拼接。"""
 from pathlib import Path
 
 import numpy as np
@@ -20,8 +20,11 @@ def _gather(X, y, ids, names, keys):
     return X[ix], y[ix], np.asarray(keys), names
 
 
-def prepare_features(features_path, metadata, keys, rhythm_path=None):
-    """返回 X, y, ids, feature_names, cache_metadata_sha256。"""
+def prepare_features(features_path, metadata, keys, extra_paths=None):
+    """返回 X, y, ids, feature_names, cache_metadata_sha256。
+
+    extra_paths: 可选附加 npz 列表（如 rhythm / structure），按 ids 对齐后横向拼接。
+    """
     X, y, ids, names, cache_hash = _load(features_path)
     if X.ndim != 2 or X.shape != (len(ids), len(names)) or y.shape != (len(ids),):
         raise ValueError('Unexpected feature cache shape')
@@ -31,10 +34,16 @@ def prepare_features(features_path, metadata, keys, rhythm_path=None):
     expected = np.asarray([int(metadata[k]['ps']) for k in keys], dtype=np.int64)
     if not np.array_equal(y, expected):
         raise ValueError('Feature labels disagree with metadata')
-    if rhythm_path is None:
-        return X, expected, ids, names, cache_hash
-    rX, ry, rids, rnames, rhash = _load(rhythm_path)
-    rX, ry, _, rnames = _gather(rX, ry, rids, rnames, keys)
-    if not np.array_equal(ry, expected):
-        raise ValueError('Rhythm labels disagree with metadata')
-    return np.hstack([X, rX]), expected, ids, names + rnames, rhash
+
+    last_hash = cache_hash
+    for path in (extra_paths or []):
+        if path is None:
+            continue
+        eX, ey, eids, enames, ehash = _load(path)
+        eX, ey, _, enames = _gather(eX, ey, eids, enames, keys)
+        if not np.array_equal(ey, expected):
+            raise ValueError(f'Extra feature labels disagree with metadata: {path}')
+        X = np.hstack([X, eX])
+        names = names + enames
+        last_hash = ehash
+    return X, expected, ids, names, last_hash if (extra_paths and any(extra_paths)) else cache_hash
