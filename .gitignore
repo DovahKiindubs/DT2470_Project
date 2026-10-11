@@ -30,6 +30,7 @@ dist/
 
 # Local datasets: keep directory markers and documentation only.
 /datasets/audio/*
+!/datasets/audio/reports/
 /datasets/features/cqt/
 /datasets/archives/*
 /datasets/*.zip

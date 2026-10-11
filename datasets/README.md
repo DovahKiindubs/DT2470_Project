@@ -6,9 +6,35 @@
 - `metadata/split_audio.json`：作者提供的 5 折曲目级划分，保持原样，当前主实验未使用。
 - `features/cqt/`：7,901 个 CQT `.bin` 文件，文件名未修改。
 - `features/cqt_stats.npz`：从每首曲子的 CQT 提取的 176 维统计特征，即 88 个频率 bin 的时间均值与标准差。
-- `audio/`：目前没有完整原始音频；元数据中的链接不等于音频文件。
-- `splits/cqt_composer_split.json`：当前 Ridge 与 HGB 实验使用的严格划分。
+- `audio/mp3_pieces/`：本地原始 MP3（约 7703 首，stem 与元数据 key 精确匹配）；不落盘全量 WAV。
+- `audio/reports/audio_qc.json`：音频对齐与质检报告（见下节）。
+- `splits/cqt_composer_split.json`：当前 Ridge 与 HGB 实验使用的严格划分（全量 CQT）。
+- `splits/audio_composer_subset.json`：QC 通过音频 ∩ 上述严格划分，供节奏特征 ablation。
 - `inventory.json`：下载文件校验值、CQT 完整性和初始数据检查记录。
+
+## 原始音频与共同子集
+
+节奏特征（onset density、tempogram 等）需要原始音频。加载协议由 `src/audio_io.py` 固定：
+
+- 保留文件原生采样率、单声道、float32；
+- 峰值归一化到 `0.99`（全静音不缩放）；
+- 不截断、不 trim silence、不做 R128 响度归一化；
+- 统一走 `load_audio()`；节奏特征应用**秒**为单位的 hop/窗，勿写死 sample hop。
+
+生成报告：
+
+```bash
+python src/preprocess_audio.py
+```
+
+产出：
+
+- `audio/reports/audio_qc.json`：对齐摘要、QC 统计、`failed`、`ok`
+- `splits/audio_composer_subset.json`：通过曲目 ∩ `cqt_composer_split`（含相对全量 split 的 missing）
+
+硬失败（剔除）：无法解码、时长 `< 3 s`、全静音、含 NaN/Inf。软警告（保留）：与 meta duration 相对误差 `> 10%`、缺 meta duration、极低 RMS、削波、时长 `> 600 s`。
+
+**实验纪律：** 报告 CQT vs +rhythm 时，必须在 `splits/audio_composer_subset.json` 上重训/重评 CQT-only；禁止把全量 7901 的 CQT 分数与音频子集上的节奏分数直接比较。划分边界仍沿用 `cqt_composer_split.json` 的分组，不重新划分。
 
 ## 读取提示
 
