@@ -17,18 +17,32 @@ from audio_io import AudioLoadError, load_audio
 
 ROOT = Path(__file__).resolve().parents[1]
 HOP_SEC = 0.02
-FEATURE_NAMES = (
+# tempogram：192 lag × (mean+std)；onset/IOI/tempo：更细的标量组。
+TEMPOGRAM_WIN = 192
+N_DENSITY_BINS = 8
+SCALAR_NAMES = (
     'onset_density',
+    *(f'onset_density_bin_{i}' for i in range(N_DENSITY_BINS)),
+    'onset_density_bin_std',
+    'onset_density_bin_max',
     'onset_strength_mean',
     'onset_strength_std',
+    'onset_strength_max',
+    'onset_strength_p25',
+    'onset_strength_p50',
+    'onset_strength_p75',
     'onset_strength_p95',
     'ioi_mean',
     'ioi_std',
+    'ioi_cv',
+    'ioi_p25',
+    'ioi_p50',
+    'ioi_p75',
     'tempo_bpm',
-    'tempogram_mean',
-    'tempogram_std',
-    'tempogram_max',
+    'tempo_confidence',
 )
+FEATURE_NAMES = SCALAR_NAMES + tuple(
+    f'{stat}_lag_{j:03d}' for stat in ('mean', 'std') for j in range(TEMPOGRAM_WIN))
 
 
 def sha256(path):
@@ -43,8 +57,21 @@ def _hop_length(sr):
     return max(1, int(round(int(sr) * HOP_SEC)))
 
 
+def _binned_onset_density(onset_times, duration, n_bins):
+    if duration <= 0 or n_bins < 1:
+        return np.zeros(n_bins, dtype=np.float64)
+    edges = np.linspace(0.0, duration, n_bins + 1)
+    dens = np.zeros(n_bins, dtype=np.float64)
+    for i in range(n_bins):
+        width = edges[i + 1] - edges[i]
+        if width <= 0:
+            continue
+        dens[i] = float(np.sum((onset_times >= edges[i]) & (onset_times < edges[i + 1]))) / width
+    return dens
+
+
 def summarize_rhythm(y, sr):
-    """单曲节奏统计向量，长度与 FEATURE_NAMES 一致。"""
+    """单曲节奏向量：细化 onset/IOI/tempo 标量 + tempogram 逐 lag 的时间 mean/std。"""
     y = np.asarray(y, dtype=np.float32).reshape(-1)
     if y.size == 0:
         raise ValueError('Empty waveform')
@@ -67,35 +94,59 @@ def summarize_rhythm(y, sr):
         onset_envelope=onset_env, sr=sr, hop_length=hop, units='time')
     onset_times = np.asarray(onset_times, dtype=np.float64)
     onset_density = float(onset_times.size) / duration if duration > 0 else 0.0
+    dens_bins = _binned_onset_density(onset_times, duration, N_DENSITY_BINS)
 
     if onset_times.size >= 2:
         ioi = np.diff(onset_times)
         ioi_mean = float(ioi.mean())
         ioi_std = float(ioi.std(ddof=0))
+        ioi_cv = ioi_std / ioi_mean if ioi_mean > 0 else 0.0
+        ioi_p25, ioi_p50, ioi_p75 = (float(x) for x in np.percentile(ioi, (25, 50, 75)))
     else:
-        ioi_mean, ioi_std = 0.0, 0.0
+        ioi_mean = ioi_std = ioi_cv = ioi_p25 = ioi_p50 = ioi_p75 = 0.0
 
     tempo = librosa.feature.tempo(onset_envelope=onset_env, sr=sr, hop_length=hop)
     tempo_bpm = float(np.asarray(tempo, dtype=np.float64).reshape(-1)[0])
 
     tempogram = np.asarray(
-        librosa.feature.tempogram(onset_envelope=onset_env, sr=sr, hop_length=hop),
+        librosa.feature.tempogram(
+            onset_envelope=onset_env, sr=sr, hop_length=hop, win_length=TEMPOGRAM_WIN),
         dtype=np.float64)
-    if tempogram.size == 0 or not np.isfinite(tempogram).all():
+    if tempogram.ndim != 2 or tempogram.shape[0] != TEMPOGRAM_WIN or tempogram.shape[1] == 0:
+        raise ValueError(f'Expected tempogram ({TEMPOGRAM_WIN}, T>0), got {tempogram.shape}')
+    if not np.isfinite(tempogram).all():
         raise ValueError('Invalid tempogram')
 
-    vec = np.asarray([
+    # 脉冲清晰度：平均 tempogram 剖面峰值相对均值。
+    tg_profile = tempogram.mean(axis=1)
+    tempo_confidence = float(tg_profile.max() / (tg_profile.mean() + 1e-8))
+
+    scalars = np.asarray([
         onset_density,
+        *dens_bins.tolist(),
+        float(dens_bins.std(ddof=0)),
+        float(dens_bins.max()),
         float(onset_env.mean()),
         float(onset_env.std(ddof=0)),
+        float(onset_env.max()),
+        float(np.percentile(onset_env, 25)),
+        float(np.percentile(onset_env, 50)),
+        float(np.percentile(onset_env, 75)),
         float(np.percentile(onset_env, 95)),
         ioi_mean,
         ioi_std,
+        ioi_cv,
+        ioi_p25,
+        ioi_p50,
+        ioi_p75,
         tempo_bpm,
-        float(tempogram.mean()),
-        float(tempogram.std(ddof=0)),
-        float(tempogram.max()),
+        tempo_confidence,
     ], dtype=np.float64)
+    tg_summary = np.concatenate((
+        tempogram.mean(axis=1, dtype=np.float64),
+        tempogram.std(axis=1, dtype=np.float64, ddof=0),
+    ))
+    vec = np.concatenate((scalars, tg_summary))
     if vec.shape != (len(FEATURE_NAMES),) or not np.isfinite(vec).all():
         raise ValueError('Rhythm summary must be finite and match FEATURE_NAMES')
     return vec

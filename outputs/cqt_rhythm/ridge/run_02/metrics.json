@@ -1,0 +1,21 @@
+{
+  "validation": {
+    "n": 2044,
+    "kendall_tau_c": 0.6410597002922017,
+    "spearman": 0.7869831456511526,
+    "mae": 1.4437904776910149,
+    "mse": 3.407312886472803,
+    "acc_pm1": 0.6208414872798435,
+    "correlation_note": null
+  },
+  "mean_baseline_validation": {
+    "n": 2044,
+    "kendall_tau_c": null,
+    "spearman": null,
+    "mae": 2.581222382660789,
+    "mse": 8.872470963082797,
+    "acc_pm1": 0.2974559686888454,
+    "correlation_note": "Undefined for constant truth or predictions"
+  },
+  "test_evaluated": false
+}
