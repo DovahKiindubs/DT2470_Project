@@ -12,6 +12,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
 from evaluate import evaluate
+from feature_matrix import prepare_features
 from features_cqt import ROOT, sha256
 from split_data import make_groups, make_split, validate_split
 
@@ -32,31 +33,38 @@ def run(args):
     if not args.alphas or any(not np.isfinite(a) or a <= 0 for a in args.alphas):
         raise ValueError('All Ridge alphas must be finite and positive')
     metadata = json.loads(args.metadata.read_text(encoding='utf-8'))
-    with np.load(args.features, allow_pickle=False) as data:
-        X, y, ids = data['X'], data['y'], data['ids']
-        feature_names = data['feature_names'].tolist()
-        metadata_hash = str(data['metadata_sha256'].item())
-    if metadata_hash != sha256(args.metadata):
-        raise ValueError('Metadata changed since feature extraction; rebuild the cache')
-    if X.ndim != 2 or X.shape != (len(ids), len(feature_names)) or y.shape != (len(ids),):
-        raise ValueError('Unexpected CQT feature cache shape')
-    if not np.isfinite(X).all() or len(set(ids)) != len(ids) or not feature_names:
-        raise ValueError('Invalid features, duplicate ids or feature names')
-    if set(ids) != set(metadata) or not np.array_equal(y, [int(metadata[k]['ps']) for k in ids]):
-        raise ValueError('Feature/label/metadata alignment failed')
-    groups = make_groups(ids, metadata)
+    current_hash = sha256(args.metadata)
     if args.split.exists():
         split_doc = json.loads(args.split.read_text(encoding='utf-8'))
-        if split_doc['metadata_sha256'] != metadata_hash:
-            raise ValueError('Metadata differs from frozen split')
         parts = split_doc['parts']
+        keys = sorted(set(parts['train']) | set(parts['val']) | set(parts['test']))
     else:
+        if args.rhythm_features is not None:
+            raise ValueError('Pass --split when using --rhythm-features')
+        with np.load(args.features, allow_pickle=False) as data:
+            keys = sorted(map(str, data['ids']))
+        parts = split_doc = None
+    X, y, ids, feature_names, cache_hash = prepare_features(
+        args.features, metadata, keys, args.rhythm_features)
+    # 标签已对齐当前 metadata；split 用其记录的 hash（全量旧 split 或子集新 hash）。
+    if parts is None:
+        if cache_hash != current_hash:
+            raise ValueError('Metadata changed since feature extraction; rebuild the cache')
+        metadata_hash = cache_hash
+        groups = make_groups(ids, metadata)
         parts = make_split(ids, groups, args.seed)
         split_doc = {'seed': args.seed, 'metadata_sha256': metadata_hash,
                      'method': 'GroupShuffleSplit: 20% test groups, then 25% validation of remaining groups',
                      'grouping': 'Connected components of normalized composer strings and shared YouTube IDs',
                      'note': 'Approximate 60/20/20 by groups, not exact record counts; no grade stratification',
                      'parts': parts}
+    else:
+        metadata_hash = split_doc['metadata_sha256']
+        if metadata_hash not in (cache_hash, current_hash):
+            raise ValueError('Metadata differs from frozen split')
+    if not set(map(str, ids)) <= set(metadata):
+        raise ValueError('Feature/label/metadata alignment failed')
+    groups = make_groups(ids, metadata)
     indices = validate_split(parts, ids, groups)
     # 必须先确认覆盖；不为得到更好的成绩反复更换 seed。
     coverage = {name: {str(level): int(np.sum(y[ix] == level)) for level in range(11)}
@@ -96,16 +104,18 @@ def run(args):
             results['test'] = evaluate(y[ix], pred)
             results['mean_baseline_test'] = evaluate(y[ix], np.full(len(ix), mean_grade))
     config = {
-        'feature_group': 'cqt_only', 'model': 'StandardScaler + Ridge(solver=svd)',
+        'feature_group': 'cqt_rhythm' if args.rhythm_features else 'cqt_only',
+        'model': 'StandardScaler + Ridge(solver=svd)',
         'chosen_alpha': trials[winner]['alpha'], 'selection': 'validation Tau-c, then lower validation MSE',
         'alphas': sorted(set(args.alphas)), 'python': platform.python_version(),
         'versions': {p: version(p) for p in ('numpy', 'scipy', 'scikit-learn', 'joblib')},
         'features_file': str(args.features.resolve()), 'features_sha256': sha256(args.features),
+        'rhythm_features_file': str(args.rhythm_features.resolve()) if args.rhythm_features else None,
         'split_file': str(args.split.resolve()), 'split_sha256': sha256(args.split),
         'split_seed': split_doc['seed'], 'metadata_sha256': metadata_hash,
         'sizes': {name: len(ix) for name, ix in indices.items()}, 'grade_counts': coverage,
         'n_features': len(feature_names),
-        'preprocessing': f'{len(feature_names)} cached CQT features; scaler fitted on train only',
+        'preprocessing': f'{len(feature_names)} cached features; scaler fitted on train only',
         'metric_conventions': 'Raw Ridge scores for Tau-c/Spearman/MAE/MSE; Acc±1 clips to 0..10 then floor(x+0.5)',
         'limitations': ['Single fixed split; not official MIREX evaluation.',
                        'All available CQT records; later rhythm comparison must use same common audio subset.',
@@ -127,6 +137,7 @@ def run(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--features', type=Path, default=ROOT/'datasets/features/cqt_stats.npz')
+    parser.add_argument('--rhythm-features', type=Path, default=None)
     parser.add_argument('--metadata', type=Path, default=ROOT/'datasets/metadata/new_clean_data.json')
     parser.add_argument('--split', type=Path, default=ROOT/'datasets/splits/cqt_composer_split.json')
     parser.add_argument('--output', type=Path, default=ROOT/'outputs/cqt_only/ridge/run_01')

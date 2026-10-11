@@ -5,11 +5,12 @@
 - `metadata/new_clean_data.json`：原始曲目元数据与标签，7,901 条记录。
 - `metadata/split_audio.json`：作者提供的 5 折曲目级划分，保持原样，当前主实验未使用。
 - `features/cqt/`：7,901 个 CQT `.bin` 文件，文件名未修改。
-- `features/cqt_stats.npz`：从每首曲子的 CQT 提取的 176 维统计特征，即 88 个频率 bin 的时间均值与标准差。
-- `audio/mp3_pieces/`：本地原始 MP3（约 7703 首，stem 与元数据 key 精确匹配）；不落盘全量 WAV。
+- `features/cqt_stats.npz`：全量 176 维 CQT 统计特征。
+- `features/rhythm_stats.npz`：QC 通过 MP3 的 10 维节奏统计。训练时按 `audio_composer_subset` 与 CQT 内存拼接，不另存拼接 npz。
+- `audio/mp3_pieces/`：本地原始 MP3（约 7703 首）；不落盘全量 WAV。
 - `audio/reports/audio_qc.json`：音频对齐与质检报告（见下节）。
-- `splits/cqt_composer_split.json`：当前 Ridge 与 HGB 实验使用的严格划分（全量 CQT）。
-- `splits/audio_composer_subset.json`：QC 通过音频 ∩ 上述严格划分，供节奏特征 ablation。
+- `splits/cqt_composer_split.json`：全量 CQT 严格划分。
+- `splits/audio_composer_subset.json`：QC 通过音频 ∩ 上述划分；CQT vs +rhythm ablation 共用此 split。
 - `inventory.json`：下载文件校验值、CQT 完整性和初始数据检查记录。
 
 ## 原始音频与共同子集

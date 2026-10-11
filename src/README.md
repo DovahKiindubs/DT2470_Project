@@ -7,6 +7,8 @@
 - `audio_io.py`：原始音频唯一加载入口（mono / 原生采样率 / 峰值归一化到 0.99）；不落盘 WAV。
 - `preprocess_audio.py`：MP3 与元数据对齐、批量 QC、断点续跑；写出 `audio_qc.json` 与 `splits/audio_composer_subset.json`。
 - `features_cqt.py`：读取可信的 `.bin`，校验形状 `(88, T)`、空输入及 NaN/Inf；沿时间提取 88 个均值 + 88 个标准差，形成 176 维全局基线特征。
+- `features_rhythm.py`：从 QC 通过的 MP3 提取 onset / tempogram 统计（10 维）。
+- `feature_matrix.py`：按 split ids 选取特征，可选与 rhythm 内存拼接。
 - `features_cqt_windows.py`：在 5 fps CQT 上使用 50 帧窗口、25 帧步长，以相邻帧正向 CQT-dB 变化均值排序窗口，选最高 20% 窗口；将全局统计、困难窗口统计的均值池化和逐维最大池化拼成 528 维特征。
 - `split_data.py`：作曲家名称进行 Unicode/大小写/空白归一化；相同作曲家或共用 YouTube 录音的条目归为同一组，冻结 train/val/test。仍不能代替作曲家别名和曲目身份的人工复核。
 - `train.py`：只在训练集拟合 StandardScaler 和 Ridge；在验证集比较 alpha；按 Tau-c 最大、MSE 最小的顺序选参，保存模型和运行记录。
@@ -27,9 +29,20 @@ python src/preprocess_audio.py
 python src/features_cqt.py
 python src/features_cqt_windows.py
 
+# 节奏统计（默认只用 audio_qc.json 的 ok keys；耗时较长）
+python src/features_rhythm.py
+
 # 全局统计基线
 python src/train.py
 python src/train_hgb.py
+
+# CQT+节奏（按 audio_composer_subset 内存拼接，不写中间 npz）
+python src/train.py --rhythm-features datasets/features/rhythm_stats.npz --split datasets/splits/audio_composer_subset.json --output outputs/cqt_rhythm/ridge/run_01
+python src/train_hgb.py --rhythm-features datasets/features/rhythm_stats.npz --split datasets/splits/audio_composer_subset.json --output outputs/cqt_rhythm/hgb/run_01
+
+# hard-windows + 节奏
+python src/train.py --features datasets/features/cqt_hard_windows.npz --rhythm-features datasets/features/rhythm_stats.npz --split datasets/splits/audio_composer_subset.json --output outputs/cqt_rhythm/hard_windows_rhythm/ridge/run_01
+python src/train_hgb.py --features datasets/features/cqt_hard_windows.npz --rhythm-features datasets/features/rhythm_stats.npz --split datasets/splits/audio_composer_subset.json --output outputs/cqt_rhythm/hard_windows_rhythm/hgb/run_01
 
 # 滑窗困难片段池化：复用相同严格划分，仅评估验证集
 python src/train.py --features datasets/features/cqt_hard_windows.npz --output outputs/cqt_hard_windows/ridge/run_03 --alphas 100 300 1000 3000 10000
@@ -52,9 +65,12 @@ python -m pip check
 - 元数据：`datasets/metadata/new_clean_data.json`
 - 全局特征缓存：`datasets/features/cqt_stats.npz`
 - 滑窗困难片段特征缓存：`datasets/features/cqt_hard_windows.npz`
+- 节奏特征缓存：`datasets/features/rhythm_stats.npz`
 - 冻结划分：`datasets/splits/cqt_composer_split.json`
+- 音频共同子集划分：`datasets/splits/audio_composer_subset.json`
 - 全局统计结果：`outputs/cqt_only/`
 - 滑窗困难片段结果：`outputs/cqt_hard_windows/`
+- CQT+节奏结果：`outputs/cqt_rhythm/`
 
 ## 已完成的初步验证
 

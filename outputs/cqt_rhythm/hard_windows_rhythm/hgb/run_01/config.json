@@ -1,0 +1,67 @@
+{
+  "feature_group": "cqt_rhythm",
+  "model": "HistGradientBoostingRegressor",
+  "chosen_max_leaf_nodes": 63,
+  "selection": "validation Tau-c, then lower validation MSE",
+  "max_leaf_nodes_candidates": [
+    7,
+    15,
+    31,
+    63,
+    127
+  ],
+  "fixed_parameters": {
+    "loss": "squared_error",
+    "learning_rate": 0.05,
+    "max_iter": 300,
+    "min_samples_leaf": 20,
+    "l2_regularization": 1.0,
+    "early_stopping": false,
+    "random_state": 42
+  },
+  "python": "3.12.4",
+  "versions": {
+    "numpy": "2.5.2",
+    "scipy": "1.18.1",
+    "scikit-learn": "1.8.0",
+    "joblib": "1.5.3"
+  },
+  "features_file": "D:\\StudyInKTH\\SecondYear\\DT2470_Music Informatics\\DT2470_Project\\datasets\\features\\cqt_hard_windows.npz",
+  "features_sha256": "bb9acae5e33ff94412287bff39e864438ecefe6155ad361fc4f905c06fa3afff",
+  "rhythm_features_file": "D:\\StudyInKTH\\SecondYear\\DT2470_Music Informatics\\DT2470_Project\\datasets\\features\\rhythm_stats.npz",
+  "rhythm_features_sha256": "055e987fae5c8b33efc9ba3c84b0221e99d32f440f10dac6782f2818d3ccebf8",
+  "split_file": "D:\\StudyInKTH\\SecondYear\\DT2470_Music Informatics\\DT2470_Project\\datasets\\splits\\audio_composer_subset.json",
+  "split_sha256": "146569a69c55975d981614481b2ccd8ac64279e890bc3fc62571a83165af7bd7",
+  "split_seed": 42,
+  "model_seed": 42,
+  "metadata_sha256": "190cca502030862ce2c676a264179d444506dcaed2d625c5dd8612858040a4a2",
+  "sizes": {
+    "train": 4097,
+    "val": 2044,
+    "test": 1562
+  },
+  "n_features": 538,
+  "preprocessing": "538 features joined in memory; no StandardScaler for trees",
+  "metric_conventions": "Raw model scores for Tau-c/Spearman/MAE/MSE; Acc±1 clips to 0..10 then floor(x+0.5)",
+  "limitations": [
+    "Single fixed split; not official MIREX evaluation.",
+    "Validation set used to select one of five tree-complexity candidates.",
+    "Temporal order already removed by mean/std pooling.",
+    "Later rhythm comparison must use the same common audio subset."
+  ],
+  "code_sha256": {
+    "audio_io.py": "139f3b0fe692c3c7a4376a3d1414fe468ad1a91415f8e5459617bb1fb4b0e67e",
+    "evaluate.py": "cefa98db865f4521541b4c33435cfb671d22d1e67f079754e53b36d8add34a06",
+    "feature_matrix.py": "f7e41b33068ff52207e3e9da9b3cefbf832cf8a8cd15dd9fce0de32c09dcda58",
+    "features_cqt.py": "a12c476ab8b3d4c70d3a3330388ff63c708836a8030f8ed90242416acdaf4569",
+    "features_cqt_windows.py": "33d554b336ce118b4e62c50c88119ae1f3274a37e39517767a13490ce617d55a",
+    "features_rhythm.py": "a77eb665059ef9016b4d373c3db6b566902d8f207aeb88015a269c6c62fe5aac",
+    "model_crnn.py": "6ce95b94be9ca893ea2823d86ef3343967a7219a52860e9186d80fd293e4fddc",
+    "prepare_crnn.py": "18cf3ca32ed83414459ed3c47c9fee79ec4d7bbd6945927911573cea6b2a92af",
+    "preprocess_audio.py": "26578b0b96f025444191ae3e54c06dc34ec5c6f196518f9ba72a02193e4efce3",
+    "split_data.py": "b929a77bbff7369b9a6dbf36bf28cacbc2b2e4f539e800b540bb583b3f159635",
+    "train.py": "8db4eb5d5aff4b74ec72b26edddb8315cd2914db85279dc1cbf6b02096273c26",
+    "train_crnn.py": "b27f2515a48c5e890ca94957c90e744a64a9d7852a462f4d913d687672bf54d4",
+    "train_hgb.py": "6581e7ceb11e52c08bd4998d0189c9af64309b0f8cc577d3b00c46c86477fc5a"
+  }
+}

@@ -10,6 +10,7 @@ import numpy as np
 from sklearn.ensemble import HistGradientBoostingRegressor
 
 from evaluate import evaluate
+from feature_matrix import prepare_features
 from features_cqt import ROOT, sha256
 from split_data import make_groups, validate_split
 
@@ -37,22 +38,18 @@ def run(args):
     if not args.split.exists():
         raise FileNotFoundError('Reuse the frozen Ridge split; run the baseline first')
     metadata = json.loads(args.metadata.read_text(encoding='utf-8'))
-    with np.load(args.features, allow_pickle=False) as data:
-        X, y, ids = data['X'], data['y'], data['ids']
-        feature_names = data['feature_names'].tolist()
-        metadata_hash = str(data['metadata_sha256'].item())
-    if metadata_hash != sha256(args.metadata):
-        raise ValueError('Metadata changed since feature extraction')
-    if X.ndim != 2 or X.shape != (len(ids), len(feature_names)) or y.shape != (len(ids),) or not np.isfinite(X).all():
-        raise ValueError('Unexpected or non-finite feature cache')
-    if not feature_names or len(set(ids)) != len(ids):
-        raise ValueError('Missing feature names or duplicate ids')
-    if set(ids) != set(metadata) or not np.array_equal(y, [int(metadata[k]['ps']) for k in ids]):
-        raise ValueError('Feature/label/metadata alignment failed')
+    current_hash = sha256(args.metadata)
     split_doc = json.loads(args.split.read_text(encoding='utf-8'))
-    if split_doc['metadata_sha256'] != metadata_hash:
+    parts = split_doc['parts']
+    keys = sorted(set(parts['train']) | set(parts['val']) | set(parts['test']))
+    X, y, ids, feature_names, cache_hash = prepare_features(
+        args.features, metadata, keys, args.rhythm_features)
+    metadata_hash = split_doc['metadata_sha256']
+    if metadata_hash not in (cache_hash, current_hash):
         raise ValueError('Metadata differs from frozen split')
-    indices = validate_split(split_doc['parts'], ids, make_groups(ids, metadata))
+    if not set(map(str, ids)) <= set(metadata):
+        raise ValueError('Feature/label/metadata alignment failed')
+    indices = validate_split(parts, ids, make_groups(ids, metadata))
     train, val = indices['train'], indices['val']
     trials, models = [], []
     for nodes in leaves:
@@ -83,7 +80,7 @@ def run(args):
             results['test'] = evaluate(y[ix], pred)
             results['mean_baseline_test'] = evaluate(y[ix], np.full(len(ix), mean_grade))
     config = {
-        'feature_group': 'cqt_only',
+        'feature_group': 'cqt_rhythm' if args.rhythm_features else 'cqt_only',
         'model': 'HistGradientBoostingRegressor',
         'chosen_max_leaf_nodes': trials[winner]['max_leaf_nodes'],
         'selection': 'validation Tau-c, then lower validation MSE',
@@ -94,12 +91,13 @@ def run(args):
         'python': platform.python_version(),
         'versions': {p: version(p) for p in ('numpy', 'scipy', 'scikit-learn', 'joblib')},
         'features_file': str(args.features.resolve()), 'features_sha256': sha256(args.features),
+        'rhythm_features_file': str(args.rhythm_features.resolve()) if args.rhythm_features else None,
         'split_file': str(args.split.resolve()), 'split_sha256': sha256(args.split),
         'split_seed': split_doc['seed'], 'model_seed': args.seed,
         'metadata_sha256': metadata_hash,
         'sizes': {name: len(ix) for name, ix in indices.items()},
         'n_features': len(feature_names),
-        'preprocessing': f'{len(feature_names)} cached CQT features; no StandardScaler for trees',
+        'preprocessing': f'{len(feature_names)} cached features; no StandardScaler for trees',
         'metric_conventions': 'Raw model scores for Tau-c/Spearman/MAE/MSE; Acc±1 clips to 0..10 then floor(x+0.5)',
         'limitations': ['Single fixed split; not official MIREX evaluation.',
                         'Validation set used to select one of five tree-complexity candidates.',
@@ -123,6 +121,7 @@ def run(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--features', type=Path, default=ROOT/'datasets/features/cqt_stats.npz')
+    parser.add_argument('--rhythm-features', type=Path, default=None)
     parser.add_argument('--metadata', type=Path, default=ROOT/'datasets/metadata/new_clean_data.json')
     parser.add_argument('--split', type=Path, default=ROOT/'datasets/splits/cqt_composer_split.json')
     parser.add_argument('--output', type=Path, default=ROOT/'outputs/cqt_only/hgb/run_01')

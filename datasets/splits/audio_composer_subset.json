@@ -1,6 +1,7 @@
 {
   "source_split": "datasets/splits/cqt_composer_split.json",
-  "split_seed": 42,
+  "seed": 42,
+  "metadata_sha256": "190cca502030862ce2c676a264179d444506dcaed2d625c5dd8612858040a4a2",
   "n_valid": 7703,
   "source_counts": {
     "train": 4211,

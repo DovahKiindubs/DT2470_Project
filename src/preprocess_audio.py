@@ -140,7 +140,7 @@ def build_common_subset(valid_keys, split_path=SPLIT):
 
     return {
         'source_split': _rel(split_path),
-        'split_seed': split.get('seed'),
+        'seed': split.get('seed'),
         'n_valid': len(valid),
         'source_counts': source_counts,
         'counts': counts,
