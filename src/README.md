@@ -7,7 +7,8 @@
 - `audio_io.py`：原始音频唯一加载入口（mono / 原生采样率 / 峰值归一化到 0.99）；不落盘 WAV。
 - `preprocess_audio.py`：MP3 与元数据对齐、批量 QC、断点续跑；写出 `audio_qc.json` 与 `splits/audio_composer_subset.json`。
 - `features_cqt.py`：读取可信的 `.bin`，校验形状 `(88, T)`、空输入及 NaN/Inf；沿时间提取 88 个均值 + 88 个标准差，形成 176 维全局基线特征。
-- `features_rhythm.py`：从 QC 通过的 MP3 提取 onset / tempogram 统计（10 维）。
+- `features_rhythm.py`：从 QC 通过的 MP3 提取全曲 onset / tempogram 统计。
+- `features_rhythm_temporal.py`：onset 滑窗局部节奏（10s/5s）；全体窗 mean/std/max + hard_mean（36 维）。
 - `feature_matrix.py`：按 split ids 选取特征，可选与 rhythm 内存拼接。
 - `features_cqt_windows.py`：在 5 fps CQT 上使用 50 帧窗口、25 帧步长，以相邻帧正向 CQT-dB 变化均值排序窗口，选最高 20% 窗口；将全局统计、困难窗口统计的均值池化和逐维最大池化拼成 528 维特征。
 - `split_data.py`：作曲家名称进行 Unicode/大小写/空白归一化；相同作曲家或共用 YouTube 录音的条目归为同一组，冻结 train/val/test。仍不能代替作曲家别名和曲目身份的人工复核。
@@ -31,6 +32,7 @@ python src/features_cqt_windows.py
 
 # 节奏统计（默认只用 audio_qc.json 的 ok keys；耗时较长）
 python src/features_rhythm.py
+python src/features_rhythm_temporal.py --workers 12
 
 # 全局统计基线
 python src/train.py
@@ -72,6 +74,7 @@ python -m pip check
 - 全局特征缓存：`datasets/features/cqt_stats.npz`
 - 滑窗困难片段特征缓存：`datasets/features/cqt_hard_windows.npz`
 - 节奏特征缓存：`datasets/features/rhythm_stats.npz`
+- 时序节奏缓存：`datasets/features/rhythm_temporal.npz`
 - 结构特征缓存：`datasets/features/structure_stats.npz`
 - 冻结划分：`datasets/splits/cqt_composer_split.json`
 - 音频共同子集划分：`datasets/splits/audio_composer_subset.json`

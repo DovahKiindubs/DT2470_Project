@@ -19,7 +19,10 @@
     "cqt_hard_windows_rhythm10_538": "cqt_hard_windows_528 + previous 10-D rhythm (run_01)",
     "cqt_hard_windows_rhythm410_938": "cqt_hard_windows_528 + 410-D rhythm",
     "cqt_hard_windows_structure_601": "cqt_hard_windows_528 + structure_73",
-    "cqt_hard_windows_rhythm_structure_1011": "cqt_hard_windows_528 + rhythm410 + structure_73"
+    "cqt_hard_windows_rhythm_structure_1011": "cqt_hard_windows_528 + rhythm410 + structure_73",
+    "rhythm_temporal_36": "10s/5s onset-window locals pooled mean/std/max/hard_mean (36-D)",
+    "cqt_hard_windows_rhythm_temporal_564": "HW528 + rhythm_temporal_36",
+    "cqt_hard_windows_rhythm_temporal_structure_637": "HW528 + rhythm_temporal_36 + structure73"
   },
   "ridge": {
     "cqt_only_176": {
@@ -137,6 +140,30 @@
       "mae": -0.0903538782372948,
       "mse": -0.4027566825285773,
       "acc_pm1": 0.023483365949119372
+    },
+    "rhythm_temporal_36": {
+      "kendall_tau_c": 0.5976972361472268,
+      "spearman": 0.7443525710817106,
+      "mae": 1.6208766408648352,
+      "mse": 4.339511218399844,
+      "acc_pm1": 0.5376712328767124,
+      "alpha": 10
+    },
+    "cqt_hard_windows_rhythm_temporal_564": {
+      "kendall_tau_c": 0.6766362146284672,
+      "spearman": 0.8175159377840521,
+      "mae": 1.3472804019479647,
+      "mse": 3.0116206962776646,
+      "acc_pm1": 0.6394324853228963,
+      "alpha": 1000
+    },
+    "cqt_hard_windows_rhythm_temporal_structure_637": {
+      "kendall_tau_c": 0.6996886500894222,
+      "spearman": 0.8366992230841132,
+      "mae": 1.2611406198282227,
+      "mse": 2.6613864054159353,
+      "acc_pm1": 0.6590019569471625,
+      "alpha": 1000
     }
   },
   "hist_gradient_boosting": {
@@ -255,6 +282,30 @@
       "mae": -0.1062865942309863,
       "mse": -0.3708345034070031,
       "acc_pm1": 0.03962818003913904
+    },
+    "rhythm_temporal_36": {
+      "kendall_tau_c": 0.6373863074972905,
+      "spearman": 0.7796923808600285,
+      "mae": 1.4465862682093702,
+      "mse": 3.3690535787175055,
+      "acc_pm1": 0.6042074363992173,
+      "max_leaf_nodes": 7
+    },
+    "cqt_hard_windows_rhythm_temporal_564": {
+      "kendall_tau_c": 0.6874668257244726,
+      "spearman": 0.8270963104269384,
+      "mae": 1.2841916347306843,
+      "mse": 2.720391831362192,
+      "acc_pm1": 0.6575342465753424,
+      "max_leaf_nodes": 31
+    },
+    "cqt_hard_windows_rhythm_temporal_structure_637": {
+      "kendall_tau_c": 0.7012662711922826,
+      "spearman": 0.8357225390807312,
+      "mae": 1.2287005753809213,
+      "mse": 2.5249318492396684,
+      "acc_pm1": 0.6956947162426614,
+      "max_leaf_nodes": 31
     }
   },
   "test_evaluated": false,
@@ -303,6 +354,18 @@
     "cqt_hard_windows_rhythm_structure_1011": {
       "ridge": "outputs/audio_subset/cqt_hard_windows_rhythm_structure/ridge/run_01",
       "hgb": "outputs/audio_subset/cqt_hard_windows_rhythm_structure/hgb/run_01"
+    },
+    "rhythm_temporal_36": {
+      "ridge": "outputs/audio_subset/rhythm_temporal/ridge/run_01",
+      "hgb": "outputs/audio_subset/rhythm_temporal/hgb/run_01"
+    },
+    "cqt_hard_windows_rhythm_temporal_564": {
+      "ridge": "outputs/audio_subset/cqt_hard_windows_rhythm_temporal/ridge/run_01",
+      "hgb": "outputs/audio_subset/cqt_hard_windows_rhythm_temporal/hgb/run_01"
+    },
+    "cqt_hard_windows_rhythm_temporal_structure_637": {
+      "ridge": "outputs/audio_subset/cqt_hard_windows_rhythm_temporal_structure/ridge/run_01",
+      "hgb": "outputs/audio_subset/cqt_hard_windows_rhythm_temporal_structure/hgb/run_01"
     }
   },
   "note": "All rows use audio_composer_subset. cqt_only_176 is the subset baseline under audio_subset/cqt_only/ (not outputs/cqt_only/, which is the full-split baseline). Delta keys (*_minus_*) are derived, not separate runs."
