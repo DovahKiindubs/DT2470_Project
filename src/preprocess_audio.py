@@ -2,7 +2,7 @@
 import json
 from pathlib import Path
 
-from audio_io import (
+from data.audio_io import (
     PEAK_TARGET,
     AudioLoadError,
     duration_rel_err,

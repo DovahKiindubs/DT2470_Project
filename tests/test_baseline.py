@@ -14,10 +14,10 @@ sys.path.insert(0, str(ROOT/'src'))
 from features_cqt import ArrayUnpickler, extract, sha256, summarize_cqt
 from features_cqt_windows import spectral_flux_score, summarize_hard_windows, window_starts
 from evaluate import evaluate
-from split_data import make_groups, make_split, recording_id, validate_split
+from data.split_data import make_groups, make_split, recording_id, validate_split
 from train import build_model
 from train_hgb import build_hgb
-from model_crnn import CQTCRNN, collate_sequences, downsample_lengths
+from models.model_crnn import CQTCRNN, collate_sequences, downsample_lengths
 
 
 def test_cqt_summary_and_order():

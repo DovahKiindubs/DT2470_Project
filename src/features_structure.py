@@ -12,7 +12,7 @@ from pathlib import Path
 
 import numpy as np
 
-from audio_io import AudioLoadError, load_audio
+from data.audio_io import AudioLoadError, load_audio
 
 ROOT = Path(__file__).resolve().parents[1]
 HOP_SEC = 0.05

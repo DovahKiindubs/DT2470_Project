@@ -10,9 +10,9 @@ import numpy as np
 from sklearn.ensemble import HistGradientBoostingRegressor
 
 from evaluate import evaluate
-from feature_matrix import prepare_features
+from data.feature_matrix import prepare_features
 from features_cqt import ROOT, sha256
-from split_data import make_groups, validate_split
+from data.split_data import make_groups, validate_split
 
 
 def write_json(path, data):

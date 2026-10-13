@@ -15,8 +15,8 @@ from torch.utils.data import DataLoader
 
 from evaluate import evaluate
 from features_cqt import ROOT, sha256
-from model_crnn import CQTCRNN, CQTSequenceDataset, LengthBucketBatchSampler, collate_sequences
-from split_data import make_groups, validate_split
+from models.model_crnn import CQTCRNN, CQTSequenceDataset, LengthBucketBatchSampler, collate_sequences
+from data.split_data import make_groups, validate_split
 
 
 def write_json(path,data):
