@@ -26,6 +26,29 @@ def write_json(path,data):
         json.dump(data,f,ensure_ascii=False,indent=2,allow_nan=False); f.write('\n')
 
 
+class EarlyStopping:
+    """Patience tracks meaningful Tau-c gains, independently of best-checkpoint selection."""
+    def __init__(self, patience=15, min_delta=0.001):
+        if patience <= 0 or not np.isfinite(min_delta) or min_delta < 0:
+            raise ValueError('Early stopping requires patience > 0 and finite min_delta >= 0')
+        self.patience = patience
+        self.min_delta = min_delta
+        self.reference_tau = None
+        self.stale_epochs = 0
+
+    def step(self, tau):
+        if tau is not None and not np.isfinite(tau):
+            raise ValueError('Non-finite validation Tau-c')
+        improved = tau is not None and (self.reference_tau is None or
+                    (tau > self.reference_tau and tau - self.reference_tau >= self.min_delta))
+        if improved:
+            self.reference_tau = float(tau)
+            self.stale_epochs = 0
+        else:
+            self.stale_epochs += 1
+        return self.stale_epochs >= self.patience
+
+
 def seed_all(seed):
     random.seed(seed); np.random.seed(seed); torch.manual_seed(seed)
     if torch.cuda.is_available(): torch.cuda.manual_seed_all(seed)
@@ -68,6 +91,7 @@ def main(args):
         raise ValueError('Training hyperparameters must be finite')
     if args.learning_rate <= 0 or args.weight_decay < 0 or args.grad_clip <= 0 or not 0 <= args.dropout < 1:
         raise ValueError('Invalid learning rate, weight decay, gradient clip or dropout')
+    stopping=EarlyStopping(args.patience,args.min_delta)
     seed_all(args.seed)
     split_doc,metadata,ids,labels,indices=load_split(args.metadata,args.split)
     aligned = args.rhythm_dir is not None
@@ -119,8 +143,10 @@ def main(args):
     optimizer=torch.optim.AdamW(model.parameters(),lr=args.learning_rate,weight_decay=args.weight_decay)
     loss_fn=nn.MSELoss()
     args.output.mkdir(parents=True,exist_ok=False)
+    write_json(args.output/'run_parameters.json',
+               {k:str(v) if isinstance(v,Path) else v for k,v in vars(args).items()})
     best_path=args.output/'best_checkpoint.pt'
-    best=None; stale=0; history=[]; start=time.time()
+    best=None; history=[]; start=time.time(); stop_reason='max_epochs'
     for epoch in range(1,args.max_epochs+1):
         train_sampler.set_epoch(epoch); model.train(); total=0.; count=0
         for x,lengths,y,_ in loaders['train']:
@@ -136,15 +162,25 @@ def main(args):
             total += float(loss.detach().float().cpu())*len(y); count += len(y)
         _,val_y,val_pred=predict(model,loaders['val'],device,amp_enabled)
         metrics=evaluate(val_y,val_pred); tau=metrics['kendall_tau_c']
-        row={'epoch':epoch,'train_mse':total/count,'validation':metrics}
-        history.append(row); print(json.dumps(row,ensure_ascii=False),flush=True)
         key=(-np.inf if tau is None else tau,-metrics['mse'])
         if best is None or key>best['key']:
-            best={'key':key,'epoch':epoch,'state':{k:v.detach().cpu().clone() for k,v in model.state_dict().items()},'metrics':metrics}; stale=0
+            best={'key':key,'epoch':epoch,'state':{k:v.detach().cpu().clone() for k,v in model.state_dict().items()},'metrics':metrics}
             torch.save({'state_dict':best['state'],'epoch':epoch,'metrics':metrics,
                         'normalization_sha256':sha256(args.normalization)},best_path)
-        else: stale += 1
-        if stale>=args.patience: break
+        should_stop=stopping.step(tau)
+        row={'epoch':epoch,'train_mse':total/count,'validation':metrics,
+             'early_stopping':{'stale_epochs':stopping.stale_epochs,'patience':args.patience,
+                               'min_delta':args.min_delta,'reference_tau':stopping.reference_tau},
+             'best_epoch':best['epoch']}
+        history.append(row)
+        with (args.output/'history.jsonl').open('a',encoding='utf-8') as f:
+            f.write(json.dumps(row,ensure_ascii=False,allow_nan=False)+'\n')
+        print(json.dumps(row,ensure_ascii=False,allow_nan=False),flush=True)
+        if should_stop:
+            stop_reason='early_stopping'
+            break
+    print(json.dumps({'stop_reason':stop_reason,'epochs_run':len(history),
+                      'best_epoch':best['epoch'],'best_tau_c':best['metrics']['kendall_tau_c']}),flush=True)
     model.load_state_dict(best['state']); model.to(device)
     predictions={}; results={'validation':best['metrics'],'test_evaluated':args.evaluate_test}
     for name in (('val','test') if args.evaluate_test else ('val',)):
@@ -158,7 +194,10 @@ def main(args):
           'gru_hidden_size_per_direction':args.hidden_size,'bidirectional':True,'dropout':args.dropout},
         'training':{'loss':'MSE','optimizer':'AdamW','learning_rate':args.learning_rate,
           'weight_decay':args.weight_decay,'batch_size':args.batch_size,'max_epochs':args.max_epochs,
-          'patience':args.patience,'gradient_clip':args.grad_clip,'seed':args.seed,
+          'patience':args.patience,'min_delta':args.min_delta,
+          'early_stopping_monitor':'validation Tau-c; cumulative gain from last reset >= min_delta',
+          'epochs_run':len(history),'stop_reason':stop_reason,
+          'gradient_clip':args.grad_clip,'seed':args.seed,
           'num_workers':args.num_workers,'pin_memory':args.pin_memory,'amp':amp_enabled,
           'selection':'validation Tau-c, then lower validation MSE','best_epoch':best['epoch']},
         'normalization':('Per-channel valid aligned train-frame mean/std; invalid standardized values -> 0'
@@ -208,6 +247,9 @@ if __name__=='__main__':
     p.add_argument('--conv-channels',type=int,default=64); p.add_argument('--hidden-size',type=int,default=64)
     p.add_argument('--dropout',type=float,default=0.2); p.add_argument('--learning-rate',type=float,default=1e-3)
     p.add_argument('--weight-decay',type=float,default=1e-4); p.add_argument('--grad-clip',type=float,default=1.0)
-    p.add_argument('--max-epochs',type=int,default=30); p.add_argument('--patience',type=int,default=5)
+    p.add_argument('--max-epochs',type=int,default=100,help='Maximum epochs (default: 100)')
+    p.add_argument('--patience',type=int,default=15,help='Epochs without meaningful Tau-c gain (default: 15)')
+    p.add_argument('--min-delta',type=float,default=0.001,
+                   help='Minimum cumulative Tau-c gain to reset patience (default: 0.001)')
     p.add_argument('--evaluate-test',action='store_true')
     main(p.parse_args())

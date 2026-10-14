@@ -7,7 +7,7 @@
 ### 需要同步的文件
 
 - 代码：`src/data/aligned_sequences.py`、`src/models/model_crnn.py`、`src/prepare_crnn.py`、`src/train_crnn.py`，以及原有其余 src 模块。
-- 测试：`tests/test_crnn_rhythm.py`，保留 `tests/test_baseline.py`。
+- 测试：`tests/test_crnn_rhythm.py`、`tests/test_crnn_early_stopping.py`，保留 `tests/test_baseline.py`。
 - 冻结清单：`datasets/splits/cqt_rhythm_common_v1.json` 和 `datasets/splits/cqt_rhythm_common_v1_manifest.json`。
 - 元数据：`datasets/metadata/new_clean_data.json`。
 - 数据：`datasets/features/cqt/*.bin` 与 `datasets/features/rhythm_windows/*.npz`（**包括原 index.npz**）。至少保留冻结清单纳入的 7686 对文件；多传其他曲目不会进入实验。
@@ -23,7 +23,7 @@
 source .venv/bin/activate
 python -c "import torch; print(torch.__version__, torch.version.cuda); assert torch.cuda.is_available(); print(torch.cuda.get_device_name(0))"
 python -m pip check
-python -W error -m pytest tests/test_baseline.py tests/test_crnn_rhythm.py -q
+python -W error -m pytest tests/test_baseline.py tests/test_crnn_rhythm.py tests/test_crnn_early_stopping.py -q
 ```
 
 不要重新照抄本文后半部分的旧 Python 3.12 安装方式，也不要使用 `torch --no-deps`。若当前 CUDA 环境异常，先解决具体报错再训练。
@@ -41,11 +41,25 @@ python -u src/prepare_crnn.py \
 
 两种模式共用这个 97 通道缓存。CQT-only 仅取前 88 通道，但保留与融合模式完全相同的时间裁剪。统计仅使用冻结 train 的 4089 首；逐通道排除无效观测，不使用 val/test 分布拟合。缓存保存 split、train ids、特征内容签名和时间映射参数；不匹配时报错，不自动跳过。
 
-### 3. 先跑公平的 CQT-only 对照
+### 3. 100轮上限与早停（两组统一）
 
-**这里也必须保留 `--rhythm-dir`**，用于相同时间范围的裁剪；不传它就是旧的全长输入路径。
+本次只提高训练预算和修改停止规则，网络、数据、归一化、学习率均保持不变。旧30轮的 `run_01` 全部保留。
+
+- `--max-epochs 100`：最多100轮，不是必须训练满100轮。
+- `--patience 15 --min-delta 0.001`：验证集 Tau-c 相对上次重置早停计数时的参考值，累计提高至少0.001才将计数清零；连续15轮未满足则停止。小幅改善可以累计，不是要求单轮跃升0.001。Tau-c无法定义的轮次也计入等待。
+- **早停和保存最佳模型分开**：任何更高的Tau-c仍保存checkpoint，Tau-c相同时以更低MSE选优；停止后恢复整个运行期间的最佳模型，而非只保存跨过0.001门槛的模型。MSE变好不会重置Tau-c早停计数。
+- 两组各自独立早停，最终实际轮数可以不同，这是相同规则下的正常结果。
+- 每轮立即追加 `history.jsonl`，开始训练时保存 `run_parameters.json`；最终 `config.json` 记录 `epochs_run`、`stop_reason`、`best_epoch` 和早停参数。崩溃也可以查看此前轮次，但这些文件**不是完整断点恢复**；当前仍从头训练，不从旧30轮模型续训。
+- 不新增学习率调度器、不调整padding，不触碰测试集。
+
+### 4. 同时运行：终端A启动 CQT-only 对照
+
+**这里也必须保留 `--rhythm-dir`**，用于相同时间范围的裁剪；不传它就是旧的全长输入路径。在两个独立终端或已有 tmux 会话里分别执行下面两条命令。先用 `nvidia-smi` 确认可用显卡和显存；只有一张已分配GPU时可尝试同卡并发，但会争用显存/算力/磁盘，**不保证比顺序执行更快或一定能容纳**。如有两张已分配的空闲GPU，可在各终端通过平台允许的设备选择方式分卡运行；不要覆盖平台已有的GPU分配以使用未分配设备。
+
+终端A，在服务器仓库根目录：
 
 ```bash
+source .venv/bin/activate
 set -o pipefail
 python -u src/train_crnn.py \
   --feature-mode cqt \
@@ -53,14 +67,15 @@ python -u src/train_crnn.py \
   --split datasets/splits/cqt_rhythm_common_v1.json \
   --normalization datasets/features/cqt_rhythm_common_v1_normalization.npz \
   --device cuda --batch-size 32 --num-workers 4 \
-  --max-epochs 30 --patience 5 --seed 42 \
-  --output outputs/cqt_rhythm_common_v1/cqt_only/run_01 \
-  2>&1 | tee cqt_common_v1_run_01.log
+  --max-epochs 100 --patience 15 --min-delta 0.001 --seed 42 \
+  --output outputs/cqt_rhythm_common_v1/cqt_only/run_100e_01 \
+  2>&1 | tee cqt_common_v1_100e_01.log
 ```
 
-### 4. 跑 CQT＋rhythm 融合
+### 5. 终端B启动 CQT＋rhythm 融合
 
 ```bash
+source .venv/bin/activate
 set -o pipefail
 python -u src/train_crnn.py \
   --feature-mode cqt-rhythm \
@@ -68,12 +83,14 @@ python -u src/train_crnn.py \
   --split datasets/splits/cqt_rhythm_common_v1.json \
   --normalization datasets/features/cqt_rhythm_common_v1_normalization.npz \
   --device cuda --batch-size 32 --num-workers 4 \
-  --max-epochs 30 --patience 5 --seed 42 \
-  --output outputs/cqt_rhythm_common_v1/cqt_rhythm/run_01 \
-  2>&1 | tee cqt_rhythm_common_v1_run_01.log
+  --max-epochs 100 --patience 15 --min-delta 0.001 --seed 42 \
+  --output outputs/cqt_rhythm_common_v1/cqt_rhythm/run_100e_01 \
+  2>&1 | tee cqt_rhythm_common_v1_100e_01.log
 ```
 
-输出目录已存在时会拒绝覆盖；新实验使用 run_02 等新目录以及新日志名。两组都默认不评估 test，以 validation Tau-c 选 epoch、MSE 并列决胜。比较的是当前验证集 2040 首，不是旧全量 2095 首。均从头训练，不加载旧 CQT checkpoint。初始化输入层大小不同，不承诺两组随机权重逐元素相同；后续可用相同 seed 列表进行重复实验。
+若同卡并发OOM，优先改为顺序运行以保留两组batch32一致；确需降低batch时两组都改成相同值并使用新run目录。`num-workers 4` 是每组训练和验证DataLoader的配置，两组同时执行还会增加CPU和I/O开销，不要把并发时长与独占GPU的旧时长直接比较。不会自动重新生成或写入共享归一化文件，两组只读共用它。默认不会执行测试集评分。
+
+输出目录已存在时会拒绝覆盖；重复实验使用 `run_100e_02` 等新目录和新日志名，避免 `tee` 覆盖旧日志。比较的是当前验证集2040首，不是旧全量2095首。均从头训练，不加载旧CQT checkpoint。初始化输入层大小不同，不承诺两组随机权重逐元素相同；后续可用相同seed列表进行重复实验。
 
 ### 本次实现细节与边界
 

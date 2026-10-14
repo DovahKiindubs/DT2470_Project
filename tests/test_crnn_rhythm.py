@@ -213,6 +213,14 @@ def test_real_cli_prepare_both_modes_and_checkpoint_roundtrip(tmp_path):
             '--no-amp','--output',str(output)]
         run('train_crnn.py',command)
         result=json.loads((output/'metrics.json').read_text())
+        saved_config=json.loads((output/'config.json').read_text())
+        assert saved_config['training']['epochs_run']==1
+        assert saved_config['training']['min_delta']==0.001
+        # Constant one-piece validation has undefined Tau-c and consumes patience.
+        assert saved_config['training']['stop_reason']=='early_stopping'
+        stream=[json.loads(line) for line in (output/'history.jsonl').read_text().splitlines()]
+        assert stream==json.loads((output/'history.json').read_text())
+        assert json.loads((output/'run_parameters.json').read_text())['feature_mode']==mode
         assert result['test_evaluated'] is False and 'test' not in result
         assert not (output/'predictions_test.json').exists()
         artifact=torch.load(output/'model.pt',map_location='cpu',weights_only=True)

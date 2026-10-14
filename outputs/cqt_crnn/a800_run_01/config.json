@@ -1,0 +1,49 @@
+{
+  "feature_group": "cqt_sequence",
+  "model": "Conv1d x2 + BiGRU + masked attention + linear head",
+  "architecture": {
+    "input_bins": 88,
+    "conv_channels": 64,
+    "conv_kernel": 5,
+    "conv_time_stride": 4,
+    "gru_hidden_size_per_direction": 64,
+    "bidirectional": true,
+    "dropout": 0.2
+  },
+  "training": {
+    "loss": "MSE",
+    "optimizer": "AdamW",
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "batch_size": 32,
+    "max_epochs": 30,
+    "patience": 5,
+    "gradient_clip": 1.0,
+    "seed": 42,
+    "num_workers": 4,
+    "pin_memory": true,
+    "amp": true,
+    "selection": "validation Tau-c, then lower validation MSE",
+    "best_epoch": 23
+  },
+  "normalization": "Per-CQT-bin mean/std computed across all train frames only",
+  "device": "cuda",
+  "runtime_seconds": 984.0714597702026,
+  "test_evaluated": false,
+  "python": "3.11.2",
+  "torch": "2.7.1+cu126",
+  "split_file": "/mlx_devbox/users/jiahang.123/playground/DT2470_Project/datasets/splits/cqt_composer_split.json",
+  "split_sha256": "b303a01c7cc462d6df1a915f9c1b500338ede70265c75f7dcfae3a2d6c876547",
+  "normalization_sha256": "3d66015a99a6ab6f09fa0cf4e3c406cf06f6f8947669412c49dbf7885853e68a",
+  "sizes": {
+    "train": 4211,
+    "val": 2095,
+    "test": 1595
+  },
+  "limitations": [
+    "Single strict split and one architecture configuration.",
+    "Training optimizes MSE although primary model selection metric is Tau-c.",
+    "Input CQT is approximately 5 fps; fine onset timing is unavailable.",
+    "No test evaluation unless explicitly requested."
+  ]
+}
