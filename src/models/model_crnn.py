@@ -50,7 +50,10 @@ class CQTSequenceDataset(Dataset):
 def collate_sequences(batch):
     sequences, labels, ids = zip(*batch)
     lengths = torch.tensor([x.shape[1] for x in sequences], dtype=torch.long)
-    padded = torch.zeros(len(sequences), 88, int(lengths.max()), dtype=torch.float32)
+    channels = sequences[0].shape[0]
+    if any(x.ndim != 2 or x.shape[0] != channels or x.shape[1] == 0 for x in sequences):
+        raise ValueError('Batch requires nonempty sequences with the same channel count')
+    padded = torch.zeros(len(sequences), channels, int(lengths.max()), dtype=torch.float32)
     for i, sequence in enumerate(sequences):
         padded[i, :, :sequence.shape[1]] = sequence
     return padded, lengths, torch.stack(labels), list(ids)
@@ -83,10 +86,10 @@ class LengthBucketBatchSampler(Sampler):
 
 
 class CQTCRNN(nn.Module):
-    def __init__(self, conv_channels=64, hidden_size=64, dropout=0.2):
+    def __init__(self, conv_channels=64, hidden_size=64, dropout=0.2, input_channels=88):
         super().__init__()
         self.conv = nn.Sequential(
-            nn.Conv1d(88, conv_channels, 5, stride=2, padding=2),
+            nn.Conv1d(input_channels, conv_channels, 5, stride=2, padding=2),
             nn.BatchNorm1d(conv_channels), nn.GELU(),
             nn.Conv1d(conv_channels, conv_channels, 5, stride=2, padding=2),
             nn.BatchNorm1d(conv_channels), nn.GELU(), nn.Dropout(dropout),

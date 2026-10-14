@@ -17,6 +17,8 @@ from evaluate import evaluate
 from features_cqt import ROOT, sha256
 from models.model_crnn import CQTCRNN, CQTSequenceDataset, LengthBucketBatchSampler, collate_sequences
 from data.split_data import make_groups, validate_split
+from data.aligned_sequences import (AlignedFeatureSource, AlignedSequenceDataset,
+                                    check_metadata_hash, load_aligned_normalization, load_split)
 
 
 def write_json(path,data):
@@ -60,18 +62,42 @@ def main(args):
     if args.output.exists(): raise FileExistsError(args.output)
     if min(args.batch_size,args.max_epochs,args.patience,args.hidden_size,args.conv_channels) <= 0:
         raise ValueError('Invalid positive hyperparameter')
+    if args.num_workers < 0 or args.prefetch_factor <= 0:
+        raise ValueError('num-workers must be nonnegative and prefetch-factor positive')
+    if not np.isfinite([args.learning_rate,args.weight_decay,args.grad_clip,args.dropout]).all():
+        raise ValueError('Training hyperparameters must be finite')
+    if args.learning_rate <= 0 or args.weight_decay < 0 or args.grad_clip <= 0 or not 0 <= args.dropout < 1:
+        raise ValueError('Invalid learning rate, weight decay, gradient clip or dropout')
     seed_all(args.seed)
-    metadata=json.loads(args.metadata.read_text(encoding='utf-8'))
-    split_doc=json.loads(args.split.read_text(encoding='utf-8'))
-    if split_doc['metadata_sha256'] != sha256(args.metadata): raise ValueError('Split/metadata mismatch')
-    ids=np.asarray(sorted(metadata)); labels=np.asarray([int(metadata[k]['ps']) for k in ids])
-    indices=validate_split(split_doc['parts'],ids,make_groups(ids,metadata))
-    with np.load(args.normalization,allow_pickle=False) as norm:
-        mean,std=norm['mean'],norm['std']
-        if str(norm['split_sha256'].item()) != sha256(args.split):
-            raise ValueError('Normalization was not computed from this split')
-    datasets={name:CQTSequenceDataset(ids[ix],labels[ix],args.cqt_dir,mean,std)
-              for name,ix in indices.items()}
+    split_doc,metadata,ids,labels,indices=load_split(args.metadata,args.split)
+    aligned = args.rhythm_dir is not None
+    source = None
+    if args.feature_mode == 'cqt-rhythm' and not aligned:
+        raise ValueError('--feature-mode cqt-rhythm requires --rhythm-dir')
+    if not aligned and (args.manifest is not None or args.cqt_fps != 5.0 or args.cqt_time_offset != 0.0):
+        raise ValueError('Alignment options require --rhythm-dir')
+    names = ('train','val','test') if args.evaluate_test else ('train','val')
+    if aligned:
+        source=AlignedFeatureSource(ids,labels,args.cqt_dir,args.rhythm_dir,
+            args.metadata,args.split,args.cqt_fps,args.cqt_time_offset,args.manifest)
+        mean,std=load_aligned_normalization(args.normalization,source,args.split,args.metadata,
+                                            split_doc['parts']['train'])
+        datasets={name:AlignedSequenceDataset(ids[indices[name]],labels[indices[name]],source,
+                    mean,std,args.feature_mode=='cqt-rhythm') for name in names}
+    else:
+        with np.load(args.normalization,allow_pickle=False) as norm:
+            mean,std=norm['mean'],norm['std']
+            if 'preprocessing_json' in norm.files:
+                raise ValueError('Aligned normalization requires --rhythm-dir, also for the CQT control')
+            if str(norm['split_sha256'].item()) != sha256(args.split):
+                raise ValueError('Normalization was not computed from this split')
+            check_metadata_hash(args.metadata,str(norm['metadata_sha256'].item()))
+            if (mean.shape != (88,) or std.shape != (88,) or not np.isfinite(mean).all()
+                    or not np.isfinite(std).all() or np.any(std <= 0)):
+                raise ValueError('Invalid CQT normalization')
+        datasets={name:CQTSequenceDataset(ids[indices[name]],labels[indices[name]],args.cqt_dir,mean,std)
+                  for name in names}
+    input_channels=97 if args.feature_mode=='cqt-rhythm' else 88
     train_sampler=LengthBucketBatchSampler(datasets['train'].lengths,args.batch_size,args.seed,True)
     device=choose_device(args.device)
     loader_kwargs={'collate_fn':collate_sequences,'num_workers':args.num_workers,
@@ -87,7 +113,7 @@ def main(args):
     if args.evaluate_test:
         loaders['test']=DataLoader(datasets['test'],batch_sampler=LengthBucketBatchSampler(
             datasets['test'].lengths,args.batch_size,args.seed,False),**loader_kwargs)
-    model=CQTCRNN(args.conv_channels,args.hidden_size,args.dropout).to(device)
+    model=CQTCRNN(args.conv_channels,args.hidden_size,args.dropout,input_channels=input_channels).to(device)
     amp_enabled=args.amp and device.type=='cuda'
     scaler=torch.amp.GradScaler('cuda',enabled=amp_enabled)
     optimizer=torch.optim.AdamW(model.parameters(),lr=args.learning_rate,weight_decay=args.weight_decay)
@@ -125,15 +151,22 @@ def main(args):
         batch_ids,y,pred=predict(model,loaders[name],device,amp_enabled)
         predictions[name]=[{'id':key,'true_grade':int(t),'score':float(p)} for key,t,p in zip(batch_ids,y,pred)]
         if name=='test': results['test']=evaluate(y,pred)
-    config={'feature_group':'cqt_sequence','model':'Conv1d x2 + BiGRU + masked attention + linear head',
-        'architecture':{'input_bins':88,'conv_channels':args.conv_channels,'conv_kernel':5,'conv_time_stride':4,
+    config={'feature_group':('cqt_rhythm_sequence' if input_channels==97 else
+                             'cqt_sequence_aligned' if aligned else 'cqt_sequence'),
+        'model':'Conv1d x2 + BiGRU + masked attention + linear head',
+        'architecture':{'input_bins':input_channels,'conv_channels':args.conv_channels,'conv_kernel':5,'conv_time_stride':4,
           'gru_hidden_size_per_direction':args.hidden_size,'bidirectional':True,'dropout':args.dropout},
         'training':{'loss':'MSE','optimizer':'AdamW','learning_rate':args.learning_rate,
           'weight_decay':args.weight_decay,'batch_size':args.batch_size,'max_epochs':args.max_epochs,
           'patience':args.patience,'gradient_clip':args.grad_clip,'seed':args.seed,
           'num_workers':args.num_workers,'pin_memory':args.pin_memory,'amp':amp_enabled,
           'selection':'validation Tau-c, then lower validation MSE','best_epoch':best['epoch']},
-        'normalization':'Per-CQT-bin mean/std computed across all train frames only',
+        'normalization':('Per-channel valid aligned train-frame mean/std; invalid standardized values -> 0'
+                         if aligned else 'Per-CQT-bin mean/std computed across all train frames only'),
+        'feature_mode':args.feature_mode,
+        'preprocessing':source.config if aligned else None,
+        'source_signature':source.source_signature if aligned else None,
+        'manifest_sha256':source.manifest_sha256 if aligned else None,
         'device':str(device),'runtime_seconds':time.time()-start,'test_evaluated':args.evaluate_test,
         'python':platform.python_version(),'torch':str(torch.__version__),
         'split_file':str(args.split.resolve()),'split_sha256':sha256(args.split),
@@ -142,6 +175,10 @@ def main(args):
         'limitations':['Single strict split and one architecture configuration.',
           'Training optimizes MSE although primary model selection metric is Tau-c.',
           'Input CQT is approximately 5 fps; fine onset timing is unavailable.',
+          'Convolution BatchNorm/padding behavior is unchanged; GRU and attention mask only.',
+          'When rhythm is used: nominal 5 fps and common origin, not waveform-verified alignment.',
+          'Rhythm tempo_confidence is a tempogram peak/mean ratio, not calibrated BPM confidence.',
+          'Invalid rhythm values use train-mean imputation without extra indicator channels.',
           'No test evaluation unless explicitly requested.']}
     write_json(args.output/'config.json',config); write_json(args.output/'metrics.json',results)
     write_json(args.output/'history.json',history)
@@ -156,6 +193,12 @@ if __name__=='__main__':
     p.add_argument('--metadata',type=Path,default=ROOT/'datasets/metadata/new_clean_data.json')
     p.add_argument('--split',type=Path,default=ROOT/'datasets/splits/cqt_composer_split.json')
     p.add_argument('--normalization',type=Path,default=ROOT/'datasets/features/cqt_train_normalization.npz')
+    p.add_argument('--feature-mode',choices=['cqt','cqt-rhythm'],default='cqt')
+    p.add_argument('--rhythm-dir',type=Path,default=None,
+                   help='Also supply for CQT-only control to use identical common-time cropping')
+    p.add_argument('--manifest',type=Path,default=None,help='Defaults to the manifest recorded in the split')
+    p.add_argument('--cqt-fps',type=float,default=5.0)
+    p.add_argument('--cqt-time-offset',type=float,default=0.0)
     p.add_argument('--output',type=Path,default=ROOT/'outputs/cqt_crnn/run_01')
     p.add_argument('--device',choices=['auto','cpu','mps','cuda'],default='auto')
     p.add_argument('--seed',type=int,default=42); p.add_argument('--batch-size',type=int,default=32)

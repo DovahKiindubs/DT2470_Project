@@ -1,4 +1,4 @@
-"""训练集 CQT 统计：按全部有效帧计算每个频率 bin 的均值和标准差。"""
+"""Train-only CRNN normalization; optional shared CQT/rhythm time alignment."""
 import argparse
 import json
 from pathlib import Path
@@ -6,6 +6,8 @@ from pathlib import Path
 import numpy as np
 
 from features_cqt import ArrayUnpickler, ROOT, sha256
+from data.aligned_sequences import (AlignedFeatureSource, compute_aligned_statistics,
+                                    digest, load_split)
 
 
 def compute(ids, cqt_dir):
@@ -30,20 +32,28 @@ def compute(ids, cqt_dir):
 
 def main(args):
     if args.output.exists(): raise FileExistsError(args.output)
-    split_doc = json.loads(args.split.read_text(encoding='utf-8'))
-    metadata = json.loads(args.metadata.read_text(encoding='utf-8'))
-    if split_doc['metadata_sha256'] != sha256(args.metadata):
-        raise ValueError('Frozen split and metadata mismatch')
+    split_doc, metadata, all_ids, labels, _ = load_split(args.metadata, args.split)
     ids = split_doc['parts']['train']
-    if not ids or not set(ids) <= set(metadata): raise ValueError('Invalid train ids')
-    mean, std, frames = compute(ids, args.cqt_dir)
+    extra = {}
+    if args.rhythm_dir is not None:
+        source = AlignedFeatureSource(all_ids, labels, args.cqt_dir, args.rhythm_dir,
+            args.metadata, args.split, args.cqt_fps, args.cqt_time_offset, args.manifest)
+        mean, std, counts, frames = compute_aligned_statistics(source, ids)
+        extra = {'valid_counts': counts,
+                 'preprocessing_json': np.asarray(json.dumps(source.config, sort_keys=True)),
+                 'source_signature': np.asarray(source.source_signature),
+                 'manifest_sha256': np.asarray(source.manifest_sha256)}
+    else:
+        if args.manifest is not None or args.cqt_fps != 5.0 or args.cqt_time_offset != 0.0:
+            raise ValueError('Alignment options require --rhythm-dir')
+        mean, std, frames = compute(ids, args.cqt_dir)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open('xb') as f:
         np.savez(f, mean=mean, std=std, n_frames=np.asarray(frames),
                  train_ids_sha256=np.asarray(__import__('hashlib').sha256(
                      '\n'.join(ids).encode()).hexdigest()),
                  split_sha256=np.asarray(sha256(args.split)),
-                 metadata_sha256=np.asarray(sha256(args.metadata)))
+                 metadata_sha256=np.asarray(sha256(args.metadata)), **extra)
     print(f'Saved training-only normalization from {len(ids)} pieces, {frames} frames')
 
 
@@ -53,4 +63,10 @@ if __name__ == '__main__':
     p.add_argument('--metadata',type=Path,default=ROOT/'datasets/metadata/new_clean_data.json')
     p.add_argument('--split',type=Path,default=ROOT/'datasets/splits/cqt_composer_split.json')
     p.add_argument('--output',type=Path,default=ROOT/'datasets/features/cqt_train_normalization.npz')
+    p.add_argument('--rhythm-dir',type=Path,default=None,
+                   help='Prepare shared aligned 97-channel statistics for both ablation modes')
+    p.add_argument('--manifest',type=Path,default=None,help='Defaults to the manifest recorded in the split')
+    p.add_argument('--cqt-fps',type=float,default=5.0)
+    p.add_argument('--cqt-time-offset',type=float,default=0.0,
+                   help='Explicit offset of CQT frame zero on the rhythm clock, in seconds')
     main(p.parse_args())
