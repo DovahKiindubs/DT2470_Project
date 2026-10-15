@@ -1,3 +1,7 @@
+# 历史说明：本轮请使用 RERUN_SERVER.md
+
+本文件保留早期实验命令供追溯，旧outputs已移至 `archives/pre_rerun_v1/outputs/`。本次9组统一重跑请使用 `python scripts/run_experiments.py`，不要继续向下文旧路径写新结果。
+
 # CQT＋rhythm CRNN：共同子集 v1 服务器运行
 
 ## 当前入口（优先使用本节）

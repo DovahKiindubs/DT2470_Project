@@ -1,3 +1,7 @@
+# 历史说明：本轮请使用 RERUN_SERVER.md
+
+本文件保留之前的三组命令；旧outputs已完整移至 `archives/pre_rerun_v1/outputs/`。新的9组共同子集实验使用 `python scripts/run_experiments.py`，不要继续向旧路径写新结果。
+
 # Native two-branch CRNN late fusion
 
 This experiment preserves the earlier input-fusion implementation and all historical outputs. It adds a separate entry point for representation-level fusion.

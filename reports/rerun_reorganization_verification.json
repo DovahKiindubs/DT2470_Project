@@ -1,0 +1,50 @@
+{
+  "scope": "9 core rerun experiments on frozen common subset; local reorganization and server runner only",
+  "archive": {
+    "path": "archives/pre_rerun_v1",
+    "original_output_file_count": 212,
+    "original_output_hashes_equal_after_move": true,
+    "manifest": "archives/pre_rerun_v1/archive_manifest.json",
+    "source_snapshot": "archives/pre_rerun_v1/source_snapshot/src"
+  },
+  "code": {
+    "moved_module_count": 14,
+    "original_module_ast_checks": 23,
+    "preserved": ["feature algorithms", "network layers", "losses", "optimizers", "early stopping", "frozen split", "feature data", "proposal"],
+    "changes": ["module imports and relocated ROOT", "legacy CLI compatibility wrappers", "new suite configuration/runner/reporting", "HGB metadata verification uses existing strict LF/CRLF-equivalence helper", "legacy summary CLI defaults to current suite without overwriting navigation"],
+    "python_3_11_ast_parse": "passed"
+  },
+  "tests": {
+    "command": "OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONDONTWRITEBYTECODE=1 python -B -W error -m pytest tests/test_baseline.py tests/test_crnn_rhythm.py tests/test_crnn_early_stopping.py tests/test_late_fusion.py tests/test_experiment_suite.py -q",
+    "passed": 61,
+    "failed": 0,
+    "seconds": 168.59,
+    "nine_mode_synthetic_cli_smoke": "passed; actual training modules, temporary synthetic data, reduced test budgets",
+    "coverage": ["old CLI compatibility", "early and late normalization", "9 unique plans", "same split", "unknown flag rejection", "failure logging", "no overwrite", "prediction/metric validation", "archive exclusion from current summaries", "frozen cache change rejection"],
+    "not_covered": ["real CUDA training on server", "full soundfile/librosa audio preprocessing test suite", "statistical replication of historical scores"]
+  },
+  "real_preflight": {
+    "command": "python scripts/run_experiments.py --check",
+    "status": "passed",
+    "counts": {"train": 4089, "val": 2040, "test": 1557},
+    "paired_records_checked_in_both_early_and_native_loaders": 7686,
+    "statistical_feature_dimensions": [528, 938, 601, 1011],
+    "both_normalization_provenance_checks": "passed",
+    "source_signature": "4a633f3fc938710aa1e13ad103c95a4cbebc7b6cd41dcbe2c07b5120872ae831",
+    "test_scored": false,
+    "real_training_started": false
+  },
+  "delivery_checks": {
+    "markdown_links": "passed",
+    "current_summary": "9 not_started entries, no historical results mixed in",
+    "input_data_and_proposal_git_diff": "unchanged",
+    "guide_config_entrypoint_file_format": "passed",
+    "git_commit_or_push": false
+  },
+  "limitations": [
+    "Full test collection was blocked by pre-existing missing soundfile; no audio dependencies were installed or changed.",
+    "The server environment was not accessed. Use the existing successful Python 3.11 CUDA environment and run preflight there.",
+    "Identical members do not eliminate differences between HGB summaries, aligned early input and native late input/head.",
+    "Existing structure/tempo-confidence/padding/recording-identity limitations are unchanged."
+  ]
+}

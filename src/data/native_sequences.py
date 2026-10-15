@@ -10,7 +10,7 @@ from torch.utils.data import Dataset
 
 from data.aligned_sequences import (RHYTHM_NAMES, check_metadata_hash, digest, nfc,
                                     scan_files)
-from features_cqt import ArrayUnpickler, ROOT, sha256
+from features.cqt import ArrayUnpickler, ROOT, sha256
 
 
 def rhythm_validity(rhythm):

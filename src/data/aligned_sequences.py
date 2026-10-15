@@ -9,7 +9,7 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 
-from features_cqt import ArrayUnpickler, ROOT, sha256
+from features.cqt import ArrayUnpickler, ROOT, sha256
 from data.split_data import make_groups, validate_split
 
 RHYTHM_NAMES = ('onset_density', 'onset_strength_mean', 'onset_strength_std',

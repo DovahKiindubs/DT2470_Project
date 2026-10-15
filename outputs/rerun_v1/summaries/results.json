@@ -1,0 +1,52 @@
+{
+  "suite": "rerun_v1",
+  "generated_at_utc": "2026-10-15T18:49:07.410964+00:00",
+  "runs": [
+    {
+      "experiment_id": "hgb_cqt",
+      "group": "hgb",
+      "status": "not_started"
+    },
+    {
+      "experiment_id": "hgb_cqt_rhythm",
+      "group": "hgb",
+      "status": "not_started"
+    },
+    {
+      "experiment_id": "hgb_cqt_structure",
+      "group": "hgb",
+      "status": "not_started"
+    },
+    {
+      "experiment_id": "hgb_cqt_rhythm_structure",
+      "group": "hgb",
+      "status": "not_started"
+    },
+    {
+      "experiment_id": "early_cqt",
+      "group": "early",
+      "status": "not_started"
+    },
+    {
+      "experiment_id": "early_cqt_rhythm",
+      "group": "early",
+      "status": "not_started"
+    },
+    {
+      "experiment_id": "late_cqt",
+      "group": "late",
+      "status": "not_started"
+    },
+    {
+      "experiment_id": "late_rhythm",
+      "group": "late",
+      "status": "not_started"
+    },
+    {
+      "experiment_id": "late_combined",
+      "group": "late",
+      "status": "not_started"
+    }
+  ],
+  "note": "run.json is the status authority. running may be stale after a hard crash; not auto-resumed."
+}
