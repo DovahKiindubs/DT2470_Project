@@ -1,22 +1,34 @@
-# Experiment registry
+# 实验结果导航
 
-Generated from existing run artifacts; no experiment directory is moved, renamed, deleted, or overwritten.
+## 写报告先看这里
 
-- Total discovered runs: **35**
-- Test evaluated runs: **0**
-- Full strict split validation runs (N=2095): **6**
-- Audio subset validation runs (N=2044): **28**
-- Frozen CQT/rhythm common-v1 validation runs (N=2040): **1**
+- [REPORT_SELECTION.md](REPORT_SELECTION.md)：正文保留的7条核心结果、early fusion负结果、补充材料与历史归档规则。
+- [EXPERIMENT_LOG.md](EXPERIMENT_LOG.md)：E01–E06研究过程、当前结论和待补证据。
+- 原始run目录仍是配置、预测、模型与训练记录的权威来源；本次只整理文档，不移动、删除或覆盖任何run，也不改源码。
 
-## Comparison rule
+## 当前本地盘点
 
-Only compare model metrics directly when both `split_sha256` and validation N match. Runs from N=2095, 2044, and 2040 answer different experiments. All current rows are validation results; test remains sealed.
+- 带 `metrics.json` 的运行：**38**（不等于所有潜在临时/未完成目录）。
+- 标记已评估test的运行：**0**。
+- 全量严格划分，validation N=2095：**6**。
+- 音频子集，validation N=2044：**28**。
+- 冻结共同子集，validation N=2040：**4**（early30轮1条＋late三组）。
+- 100轮上限early/CQT-only对照目前仅有会话截图，未发现对应完整run，不计入上述38条。
+
+## 比较规则
+
+N相同不等于同一划分；应核对实际成员、训练数据、预处理、模型差异和调参预算。哈希不同应检查具体内容，不能一概解释为换行，也不能仅凭哈希就否定成员等价。A组旧HGB基线的训练split哈希尚待补证，见选材清单。不同N的结果分开报告，不做总榜；所有当前成绩均为validation。
 
 ## Frozen common-v1 CRNN family (N=2040)
 
 | Run | N | Tau-c | Spearman | MAE | MSE | Acc±1 | Test |
 |---|---:|---:|---:|---:|---:|---:|---|
-| `cqt_rhythm_common_v1/cqt_rhythm/run_01` | 2040 | 0.6780 | 0.8167 | 1.3061 | 2.8293 | 0.6534 | no |
+| `cqt_rhythm_common_v1/late_fusion/cqt_only/run_01` | 2040 | 0.6451 | 0.7887 | 1.4133 | 3.3092 | 0.6328 | no |
+| `cqt_rhythm_common_v1/late_fusion/rhythm_only/run_01` | 2040 | 0.6331 | 0.7742 | 1.4649 | 3.4571 | 0.5907 | no |
+| `cqt_rhythm_common_v1/late_fusion/combined/run_01` | 2040 | 0.6841 | 0.8237 | 1.2544 | 2.7423 | 0.6863 | no |
+| `cqt_rhythm_common_v1/cqt_rhythm/run_01`（early30，历史参考） | 2040 | 0.6780 | 0.8167 | 1.3061 | 2.8293 | 0.6534 | no |
+
+上面前三条属于同一新版架构族的消融；early30不是同预处理/同预测头的单变量融合位置对照。
 
 ## Full strict split family (N=2095)
 
@@ -62,17 +74,14 @@ Only compare model metrics directly when both `split_sha256` and validation N ma
 | `audio_subset/cqt_only/ridge/run_01` | 2044 | 0.5706 | 0.7249 | 1.6451 | 4.1731 | 0.5166 | no |
 | `audio_subset/rhythm/ridge/run_01` | 2044 | 0.5382 | 0.6805 | 1.7484 | 4.8830 | 0.4980 | no |
 
-## Files
+## 索引与刷新注意
 
-- `experiment_index.json`: complete machine-readable registry, file lists, hashes, and comparison groups.
-- `experiment_index.csv`: report-friendly flat table.
-- `EXPERIMENT_LOG.md`: human-curated chronology, conclusions, caveats, and next planned runs.
-- Run directories remain the source of truth for models, predictions, configs, and histories.
+- [REPORT_SELECTION.md](REPORT_SELECTION.md)：当前人工筛选的报告入口。
+- [EXPERIMENT_LOG.md](EXPERIMENT_LOG.md)：当前实验过程记录。
+- `summaries/experiment_index.json` 与 `summaries/experiment_index.csv`：**历史35条索引快照，尚未包含late三组，本轮未改写，不作为最新完整清单。**
+- `summaries/audio_subset/feature_comparison_validation.json`：历史28条音频子集结果映射。
+- 本页保留全量38条导航；原始run文件是事实来源。
 
-Refresh after copying new results:
+旧 `python src/summarize_experiments.py` 会重新生成README与机器索引，并覆盖本页的人工导航。当前未修改该脚本；不要将它当作无损更新报告清单的命令。以后刷新应保留本页报告入口、分组限制和待补证据，`REPORT_SELECTION.md`不会由旧脚本自动维护。
 
-```bash
-python src/summarize_experiments.py
-```
-
-Generated UTC: 2026-10-15T10:35:21.550146+00:00
+本页为late三组同步后的人工整理版；仅更新导航与说明，训练代码、原始run、数据划分均未改动。
