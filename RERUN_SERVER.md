@@ -134,9 +134,53 @@ python scripts/run_experiments.py --summarize
 
 所有新实验现在成员相同，但表示和模型仍有差异：HGB是统计向量，early公共裁剪，late原生全长与新预测头；不能把跨组差异全部归因于节奏或融合位置。结构算法和录音同源验证的已有局限没有因重跑消失。
 
-报告最终固定方法后再独立安排test评估；本套启动器不接受`--evaluate-test`，避免重跑时意外反复看test。
+报告最终固定方法后再独立安排test评估；训练启动器不接受`--evaluate-test`，避免重跑时意外反复看test。
 
-## 6. 本地验证范围
+## 6. 最终Test-only评估（模型已经冻结后，只运行一次）
+
+当前9组模型已经在validation上完成选择。不要使用训练脚本的`--evaluate-test`，因为那会重新训练。先把包含九组`outputs/rerun_v1/.../seed_42_run_01/`的最新主线同步到服务器，并再次执行数据检查：
+
+```bash
+source .venv/bin/activate
+python scripts/run_experiments.py --check
+
+# 只打印说明，不访问test
+python scripts/evaluate_test.py
+```
+
+确认不再根据test修改模型、特征、超参数或选择epoch后，一次性运行：
+
+```bash
+python -u scripts/evaluate_test.py \
+  --execute \
+  --acknowledge-final-test FROZEN_MODELS_FINAL_TEST \
+  --device cuda \
+  --batch-size 32 \
+  --num-workers 4
+```
+
+它会：
+
+- 加载当前9个已经保存的`model.joblib`/`model.pt`；
+- 核对共同split、validation结果、训练源码哈希、模型哈希、特征和归一化来源；
+- 只对冻结test的1557首做推理；不fit、不早停、不选参、不改模型；
+- 写入独立目录`outputs/rerun_v1/test_evaluation/final_01/`，包含每组`metrics.json`、`predictions_test.json`以及总表`RESULTS.md`/`results.json`；
+- 完成后拒绝用同一目录再次评估，避免反复看test。
+
+正常情况下**不要并行启动第二个test进程**；锁文件会阻止重复执行。若进程因机器故障中断，先检查`release.json`和已经生成的文件；仅在代码、模型和数据完全未变时使用：
+
+```bash
+python -u scripts/evaluate_test.py \
+  --execute --resume \
+  --acknowledge-final-test FROZEN_MODELS_FINAL_TEST \
+  --device cuda --batch-size 32 --num-workers 4
+```
+
+`--resume`只补未完成的模型，不重新计算已完成项；任何模型、源码、配置或数据变化都会拒绝续跑。不要删除`final_01`后重新评估，也不要根据test结果开`final_02`调参。
+
+Test完成后把`outputs/rerun_v1/test_evaluation/final_01/`提交回Git；报告的逐曲案例仍优先使用validation，test只报告预先冻结的总体结果。Test运行速度主要取决于5个CRNN前向推理，远快于重新训练。
+
+## 7. 本地验证范围
 
 整理前56项训练相关测试通过。完整测试集原先就因本地缺少soundfile无法收集音频预处理测试；本次不改变该音频依赖或重跑音频提取。
 
