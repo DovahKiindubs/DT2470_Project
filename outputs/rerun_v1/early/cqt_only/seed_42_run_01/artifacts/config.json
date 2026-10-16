@@ -1,0 +1,72 @@
+{
+  "feature_group": "cqt_sequence_aligned",
+  "model": "Conv1d x2 + BiGRU + masked attention + linear head",
+  "architecture": {
+    "input_bins": 88,
+    "conv_channels": 64,
+    "conv_kernel": 5,
+    "conv_time_stride": 4,
+    "gru_hidden_size_per_direction": 64,
+    "bidirectional": true,
+    "dropout": 0.2
+  },
+  "training": {
+    "loss": "MSE",
+    "optimizer": "AdamW",
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "batch_size": 32,
+    "max_epochs": 100,
+    "patience": 15,
+    "min_delta": 0.001,
+    "early_stopping_monitor": "validation Tau-c; cumulative gain from last reset >= min_delta",
+    "epochs_run": 42,
+    "stop_reason": "early_stopping",
+    "gradient_clip": 1.0,
+    "seed": 42,
+    "num_workers": 4,
+    "pin_memory": true,
+    "amp": true,
+    "selection": "validation Tau-c, then lower validation MSE",
+    "best_epoch": 27
+  },
+  "normalization": "Per-channel valid aligned train-frame mean/std; invalid standardized values -> 0",
+  "feature_mode": "cqt",
+  "preprocessing": {
+    "version": "center_linear_valid_brackets_v1",
+    "cqt_fps": 5.0,
+    "cqt_time_offset_seconds": 0.0,
+    "rhythm_time": "window center",
+    "boundary": "crop CQT to window-center coverage; no extrapolation or stretching",
+    "invalid": "exclude invalid values from train stats; standardized mean imputation (0)",
+    "ioi_valid": "ioi_mean > 0",
+    "tempo_valid": "onset_density > 0 and onset_strength_mean > 0 and ioi_mean > 0",
+    "confidence_valid": "onset_density > 0 and onset_strength_mean > 0",
+    "timebase_limit": "nominal CQT fps and common recording origin assumed; not waveform-verified"
+  },
+  "source_signature": "4a633f3fc938710aa1e13ad103c95a4cbebc7b6cd41dcbe2c07b5120872ae831",
+  "manifest_sha256": "7d66da681c45733d35eb3b3e3b4b8afedf12fa1a447112ec2c97f7b9c18f1380",
+  "device": "cuda",
+  "runtime_seconds": 2745.9059629440308,
+  "test_evaluated": false,
+  "python": "3.11.2",
+  "torch": "2.7.1+cu126",
+  "split_file": "/mlx_devbox/users/jiahang.123/playground/DT2470_Project/datasets/splits/cqt_rhythm_common_v1.json",
+  "split_sha256": "f606175a42e20faa79af6d3c692ec611b7606c22f38bd0f3f9ae3608aa8db147",
+  "normalization_sha256": "d81342aeded188cf6aeff9204dffdcd97edfa0ececca31b9630622e839811962",
+  "sizes": {
+    "train": 4089,
+    "val": 2040,
+    "test": 1557
+  },
+  "limitations": [
+    "Single strict split and one architecture configuration.",
+    "Training optimizes MSE although primary model selection metric is Tau-c.",
+    "Input CQT is approximately 5 fps; fine onset timing is unavailable.",
+    "Convolution BatchNorm/padding behavior is unchanged; GRU and attention mask only.",
+    "When rhythm is used: nominal 5 fps and common origin, not waveform-verified alignment.",
+    "Rhythm tempo_confidence is a tempogram peak/mean ratio, not calibrated BPM confidence.",
+    "Invalid rhythm values use train-mean imputation without extra indicator channels.",
+    "No test evaluation unless explicitly requested."
+  ]
+}

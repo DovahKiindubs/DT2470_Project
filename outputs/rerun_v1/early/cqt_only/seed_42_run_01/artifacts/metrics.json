@@ -1,0 +1,12 @@
+{
+  "validation": {
+    "n": 2040,
+    "kendall_tau_c": 0.6956791618608228,
+    "spearman": 0.8329624644581066,
+    "mae": 1.2540169510186887,
+    "mse": 2.6239834088028644,
+    "acc_pm1": 0.6774509803921569,
+    "correlation_note": null
+  },
+  "test_evaluated": false
+}
