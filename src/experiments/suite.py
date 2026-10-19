@@ -174,12 +174,13 @@ def source_hashes():
     return {str(p.relative_to(ROOT)):sha(p) for p in sorted((ROOT/'src').rglob('*.py'))}
 
 
-def launch(item, catalogue, seed, provenance, threads=4):
+def launch(item, catalogue, seed, provenance, threads=4, catalogue_path=None):
+    catalogue_path = Path(catalogue_path or CATALOGUE)
     run=item['run']
     run.mkdir(parents=True,exist_ok=False)  # Atomic reservation; never overwrite/reuse a failed run.
     state={'experiment_id':item['experiment_id'],'group':item['group'],'seed':seed,
            'status':'running','started_at_utc':now(),'command':item['command'],
-           'catalogue_sha256':sha(CATALOGUE),'inputs':provenance,
+           'catalogue_sha256':sha(catalogue_path),'inputs':provenance,
            'source_sha256':source_hashes(),
            'threads':threads,'python':sys.version}
     write_json(run/'run.json',state,exclusive=True)
@@ -259,7 +260,9 @@ def main():
     parser.add_argument('--device',choices=['cuda','cpu','mps','auto'],default='cuda')
     parser.add_argument('--num-workers',type=int,default=4);parser.add_argument('--threads',type=int,default=4)
     parser.add_argument('--skip-completed',action='store_true')
-    args=parser.parse_args();catalogue=read_json(CATALOGUE)
+    parser.add_argument('--config',type=Path,default=CATALOGUE,
+                        help='Experiment catalogue; default keeps the original rerun_v1 suite')
+    args=parser.parse_args();catalogue=read_json(args.config)
     if args.threads<1:parser.error('--threads must be positive')
     if args.skip_completed and not args.execute:parser.error('--skip-completed requires --execute')
     if args.summarize:
@@ -274,7 +277,7 @@ def main():
             state_path=item['run']/'run.json'
             state=read_json(state_path) if state_path.is_file() else {}
             if args.skip_completed and state.get('status')=='completed':
-                if (state.get('catalogue_sha256') != sha(CATALOGUE) or state.get('command') != item['command']
+                if (state.get('catalogue_sha256') != sha(args.config) or state.get('command') != item['command']
                         or state.get('source_sha256') != source_hashes() or state.get('threads')!=args.threads):
                     raise ValueError('Completed run configuration/source differs; choose another run-name')
                 verify_outputs(item)
@@ -291,7 +294,7 @@ def main():
         choose_device(args.device)  # Check before starting any expensive fit.
     try:
         for item in pending:
-            launch(item,catalogue,args.seed,provenance,args.threads)
+            launch(item,catalogue,args.seed,provenance,args.threads,catalogue_path=args.config)
             summarize(catalogue)
     finally:summarize(catalogue)
 

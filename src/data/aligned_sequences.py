@@ -240,11 +240,22 @@ def compute_aligned_statistics(source, train_ids):
 
 
 class AlignedSequenceDataset(Dataset):
-    def __init__(self, ids, labels, source, mean, std, include_rhythm):
+    def __init__(self, ids, labels, source, mean, std, include_rhythm=None, *, feature_mode=None):
+        # Keep the original positional bool API for old callers/checkpoints.
+        if feature_mode is None:
+            if include_rhythm is None:
+                raise ValueError('Specify include_rhythm or feature_mode')
+            feature_mode = 'cqt-rhythm' if include_rhythm else 'cqt'
+        elif include_rhythm is not None:
+            raise ValueError('Specify only one of include_rhythm and feature_mode')
+        channel_slices = {'cqt': slice(0, 88), 'rhythm': slice(88, 97), 'cqt-rhythm': slice(0, 97)}
+        if feature_mode not in channel_slices:
+            raise ValueError(f'Unknown aligned feature mode: {feature_mode}')
         self.ids = list(ids)
         self.labels = np.asarray(labels, dtype=np.float32)
         self.source = source
-        self.channels = 97 if include_rhythm else 88
+        self.channel_slice = channel_slices[feature_mode]
+        self.channels = self.channel_slice.stop - self.channel_slice.start
         self.mean = np.asarray(mean, dtype=np.float32).reshape(97, 1)
         self.std = np.asarray(std, dtype=np.float32).reshape(97, 1)
         if not np.isfinite(self.mean).all() or not np.isfinite(self.std).all() or np.any(self.std <= 0):
@@ -260,7 +271,7 @@ class AlignedSequenceDataset(Dataset):
         x[~valid] = 0.0  # Mean imputation in standardized space; no extra feature channels.
         if not np.isfinite(x).all():
             raise ValueError(f'Non-finite standardized sequence: {self.ids[index]}')
-        return torch.from_numpy(x[:self.channels].copy()), torch.tensor(self.labels[index]), self.ids[index]
+        return torch.from_numpy(x[self.channel_slice].copy()), torch.tensor(self.labels[index]), self.ids[index]
 
 
 def load_aligned_normalization(path, source, split_path, metadata_path, train_ids):

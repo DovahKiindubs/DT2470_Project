@@ -20,8 +20,8 @@ from experiments.evaluate_test import ACKNOWLEDGEMENT,evaluate_release
 from argparse import Namespace
 
 
-def fixture(tmp_path,monkeypatch):
-    cat=copy.deepcopy(suite.read_json(suite.CATALOGUE))
+def fixture(tmp_path,monkeypatch,catalogue_path=None):
+    cat=copy.deepcopy(suite.read_json(catalogue_path or suite.CATALOGUE))
     ids=[f'composer{c}_grade{g}' for c in range(6) for g in range(11)];labels=np.tile(np.arange(11),6)
     meta={k:{'ps':str(int(y)),'composer':k.split('_')[0],'youtube_link':''} for k,y in zip(ids,labels)}
     mp=tmp_path/cat['metadata'];mp.parent.mkdir(parents=True);suite.write_json(mp,meta)
@@ -51,7 +51,7 @@ def fixture(tmp_path,monkeypatch):
             for flag in ('--conv-channels','--hidden-size','--cqt-conv-channels','--cqt-hidden-size','--rhythm-conv-channels','--rhythm-hidden-size','--embedding-size'):
                 if flag in cmd:cmd[cmd.index(flag)+1]='4'
         absolute=copy.deepcopy(cat);absolute['metadata']=str(mp);absolute['split']=str(sp);absolute['inputs'][absolute['split']]=cat['inputs'][cat['split']]
-        suite.launch(item,absolute,42,pre,threads=1)
+        suite.launch(item,absolute,42,pre,threads=1,catalogue_path=catalogue_path)
     return cat
 
 

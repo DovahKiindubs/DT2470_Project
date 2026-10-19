@@ -1,4 +1,111 @@
-# 服务器重跑：9组共同子集实验
+# 服务器重跑指南
+
+## 当前版本：rerun_v2，10组实验
+
+本轮只新增 **early_rhythm（Early架构的Rhythm-only对照）**。原9组的配置、数据划分、特征公式、网络结构、优化器、早停和选择指标不变；旧 `configs/rerun_v1.json` 与 `outputs/rerun_v1/` 原样保留，不搬移、不覆盖。
+
+- HGB 4组：CQT、CQT+rhythm、CQT+structure、CQT+rhythm+structure。
+- Early 3组：CQT-only、**Rhythm-only（新增）**、CQT+rhythm。
+- Late 3组：CQT-only、Rhythm-only、CQT+rhythm表示融合。
+
+### 新增对照具体做什么
+
+`--feature-mode rhythm` 先走原Early的共同时间裁剪、窗口中心插值和train-only归一化，然后只取97通道中的最后9个节奏通道送入网络。与Early融合实验的节奏输入逐值相同、时序长度相同，不平均为全曲向量。网络仍为Conv1d×2（64通道）+BiGRU（每向64）+masked attention+原回归头；只将首层输入通道改为9。
+
+**服务器仍需CQT原序列文件**：此对照用它确定相同时间网格/裁剪范围并验证配对，但CQT数值不会送进Rhythm-only模型。直接复用 `cqt_rhythm_common_v1_normalization.npz` 中对应9通道参数，不需要audio或重新提取/归一化。
+
+这不是Late的小节奏分支：它沿用Early的64/64宽度、插值序列与预测头；Late仍使用原生节奏时间网格和32/32宽度。三组Early网络结构相同，但首层因输入维度不同，参数总量并非完全相同。不要把跨Early/Late差异全部归因于融合位置；structure本轮仍只在HGB里。
+
+### 服务器执行
+
+先将本次本地改动提交并推送，再在服务器仓库根目录拉取。此次实现未代你commit/push，也没有远程启动训练；不复制macOS的 `.venv`，复用此前成功的服务器CUDA环境。
+
+```bash
+git pull --ff-only
+source .venv/bin/activate
+python -c "import torch; print(torch.__version__); assert torch.cuda.is_available(); print(torch.cuda.get_device_name(0))"
+
+# 检查新配置生成的10组命令，不训练
+python scripts/run_experiments.py --config configs/rerun_v2.json --dry-run
+
+# 检查冻结文件、共同子集和缓存；不训练、不计算test成绩
+python scripts/run_experiments.py --config configs/rerun_v2.json --check
+
+# 顺序全量重跑10组；CPU运行HGB，CUDA运行CRNN
+python -u scripts/run_experiments.py --config configs/rerun_v2.json \
+  --execute --device cuda --num-workers 4 --threads 4 \
+  --seed 42 --run-name run_01
+```
+
+CRNN统一最大100轮、patience=15、Tau-c累计提升阈值0.001，保存实际最佳checkpoint。训练只用train并以validation选择模型；统一训练入口不接受 `--evaluate-test`。
+
+**必须带 `--config configs/rerun_v2.json`**：不加该参数仍是旧9组v1，保留旧命令的含义。所有训练日志自动写入各自run下，不需要再用tee。
+
+### 输出、查看进度和重试
+
+```text
+outputs/rerun_v2/
+  hgb/<cqt|cqt_rhythm|cqt_structure|cqt_rhythm_structure>/seed_42_run_01/
+  early/<cqt_only|rhythm_only|cqt_rhythm>/seed_42_run_01/
+  late/<cqt_only|rhythm_only|combined>/seed_42_run_01/
+  summaries/RESULTS.md
+  summaries/results.json
+```
+
+每个run包含 `run.json`（权威状态、命令和哈希）、`train.log`、`artifacts/`（模型、配置、指标、逐曲预测及CRNN训练历史）。新目录运行时创建，不复制旧结果冒充重跑。
+
+```bash
+# 查看当前10组进度与验证成绩
+python scripts/run_experiments.py --config configs/rerun_v2.json --summarize
+
+# 若只想补新增组
+python scripts/run_experiments.py --config configs/rerun_v2.json \
+  --execute --experiments early_rhythm --device cuda
+
+# 跳过成功且代码/配置完全相同的run，继续尚未启动项
+python scripts/run_experiments.py --config configs/rerun_v2.json \
+  --execute --skip-completed --device cuda
+
+# 失败组先查train.log；修复后另起run，旧证据不删（不是断点续训）
+python scripts/run_experiments.py --config configs/rerun_v2.json \
+  --execute --experiments early_rhythm --run-name run_02 --device cuda
+```
+
+若有多个attempt，后续test入口的 `--run-name` 要与准备冻结的全套模型一致；不要把run_02复制覆盖run_01来掩盖失败。
+
+### Test仍单独安排，不随这次训练运行
+
+Test-only入口已支持v2和9通道输入；不加配置仍指旧v1。现在不需要执行test。待10组validation完成、模型和超参数全部冻结，且确认没有根据test调过方案后，可先查看说明（不计算成绩）：
+
+```bash
+python scripts/evaluate_test.py --config configs/rerun_v2.json
+```
+
+真正最终推理时才使用：
+
+```bash
+python -u scripts/evaluate_test.py --config configs/rerun_v2.json \
+  --execute --acknowledge-final-test FROZEN_MODELS_FINAL_TEST \
+  --device cuda --batch-size 32 --num-workers 4 --seed 42 --run-name run_01
+```
+
+将写入 `outputs/rerun_v2/test_evaluation/final_01/`，不重训。若你此前已经看过v1的test，再跑v2仍是同一批测试曲目，不能称为全新未见holdout；报告需要披露新增对照属于后续探索。更换输出目录不等于换了test。
+
+代码版本保护保持严格：本次修改了原训练/数据入口，因此旧v1模型在当前源码下做test可能会报 `Training source changed`。不要删除哈希绕过保护；旧模型需在其记录匹配的源码版本下评估，新v2模型应在本次训练版本下评估。
+
+### 本次验证范围
+
+- 68项训练/推理相关pytest通过：覆盖旧9组与新10组的合成数据训练、模型保存/加载、独立test推理、禁止覆盖，以及三种Early输入通道选择。
+- Rhythm-only输入与融合输入的最后9通道逐值一致，三种Early模式长度一致；改变CQT数值不会改变送入Rhythm-only模型的数值。
+- 真实共同子集7686首的Early与Late数据入口预检通过，split、manifest、缓存及两种归一化哈希匹配；不计算真实test成绩。
+- 与Git原版本比较：原9组配置、历史输出、datasets、网络模块、特征算法、HGB/Late训练器均未改动；Early逐epoch训练循环AST未变。
+- 未执行服务器CUDA训练、真实test评分或音频提取测试；这些合成测试不代表新增模型效果已提升。
+
+---
+
+# 历史版本说明：rerun_v1（9组，保留原文）
+
+下文记录v1当时的命令与状态，不代表本次v2的运行状态。新版操作以以上v2部分为准。
 
 ## 本轮范围
 

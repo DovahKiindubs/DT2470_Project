@@ -1,4 +1,4 @@
-"""One-shot test-only evaluation for the nine frozen rerun_v1 models.
+"""One-shot test-only evaluation for saved models from an explicit experiment catalogue.
 
 This module never fits, tunes, selects, or rewrites a model. It loads the exact
 saved artifacts, scores the frozen test partition, and writes a separate release.
@@ -110,8 +110,9 @@ def _early_context(catalogue, root, split, metadata, ids, labels, indices,
 
 def _test_early(row,item,context):
     source,mean,std,kwargs,norm,ids,labels,indices,batch_size,device=context
-    include=row['id']=='early_cqt_rhythm'
-    dataset=AlignedSequenceDataset(ids[indices['test']],labels[indices['test']],source,mean,std,include)
+    mode=row['args'][row['args'].index('--feature-mode')+1]
+    dataset=AlignedSequenceDataset(ids[indices['test']],labels[indices['test']],source,mean,std,
+                                   feature_mode=mode)
     loader=DataLoader(dataset,batch_sampler=LengthBucketBatchSampler(dataset.lengths,batch_size,42,False),**kwargs)
     config=read_json(item['run']/'artifacts/config.json');arch=config['architecture']
     artifact=torch.load(item['run']/'artifacts/model.pt',map_location='cpu',weights_only=True)
@@ -163,7 +164,7 @@ def _summary(output,catalogue):
         rows.append({'experiment_id':row['id'],'group':row['group'],'status':'completed' if metrics else 'pending','test':metrics})
     write_json(output/'results.json',{'release':state,'runs':rows})
     lines=['# Final frozen test evaluation','',
-           'These metrics come from the nine pre-frozen saved models. No fitting or model selection was performed.','']
+           f'These metrics come from the {len(catalogue["experiments"])} pre-frozen saved models. No fitting or model selection was performed.','']
     for group in catalogue['groups']:
         lines.extend(['## '+group,''])
         for result in (x for x in rows if x['group']==group):
@@ -177,9 +178,10 @@ def _summary(output,catalogue):
 
 def evaluate_release(catalogue, data_root=ROOT, code_root=ROOT, output=None, seed=42,
                      run_name='run_01', device_name='cuda', batch_size=32, workers=4,
-                     resume=False):
+                     resume=False, catalogue_path=None):
     data_root,code_root=Path(data_root),Path(code_root)
-    output=Path(output or data_root/'outputs/rerun_v1/test_evaluation/final_01')
+    catalogue_path=Path(catalogue_path or CATALOGUE)
+    output=Path(output or data_root/'outputs'/catalogue['suite']/'test_evaluation/final_01')
     lock_path=output.parent/(output.name+'.lock');lock_path.parent.mkdir(parents=True,exist_ok=True)
     with lock_path.open('a+') as lock:
         try:fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
@@ -191,14 +193,14 @@ def evaluate_release(catalogue, data_root=ROOT, code_root=ROOT, output=None, see
         else:
             output.mkdir(parents=True)
             state={'status':'running','acknowledged_final_test':True,'started_at_utc':now(),
-                   'seed':seed,'run_name':run_name,'catalogue_sha256':sha(CATALOGUE),
+                   'seed':seed,'run_name':run_name,'catalogue_sha256':sha(catalogue_path),
                    'git_revision':_git_revision(code_root),'python':platform.python_version(),
                    'torch':str(torch.__version__),'device_requested':device_name,
                    'training_performed':False,'model_selection_performed':False}
             write_json(output/'release.json',state,exclusive=True)
         items=_frozen_runs(catalogue,data_root,code_root,seed,run_name)
         provenance=preflight(catalogue,[r for r,_,_ in items],root=data_root)
-        signature={'catalogue_sha256':sha(CATALOGUE),'git_revision':_git_revision(code_root),
+        signature={'catalogue_sha256':sha(catalogue_path),'git_revision':_git_revision(code_root),
                    'source_sha256':_source_hashes(code_root),
                    'models':{r['id']:sha(i['run']/'artifacts/model.joblib' if r['group']=='hgb' else i['run']/'artifacts/model.pt') for r,i,_ in items},
                    'inputs':provenance['input_sha256']}
@@ -258,16 +260,22 @@ def main():
     parser.add_argument('--num-workers',type=int,default=4)
     parser.add_argument('--seed',type=int,default=42)
     parser.add_argument('--run-name',default='run_01')
-    parser.add_argument('--output',type=Path,default=ROOT/'outputs/rerun_v1/test_evaluation/final_01')
-    args=parser.parse_args();catalogue=read_json(CATALOGUE)
-    print('This command loads all nine frozen models and scores the 1,557-piece test partition.')
+    parser.add_argument('--output',type=Path,default=None)
+    parser.add_argument('--config',type=Path,default=CATALOGUE)
+    args=parser.parse_args();catalogue=read_json(args.config)
+    if args.batch_size < 1 or args.num_workers < 0:
+        parser.error('batch-size must be positive and num-workers nonnegative')
+    args.output=args.output or ROOT/'outputs'/catalogue['suite']/'test_evaluation/final_01'
+    print(f'This command loads all {len(catalogue["experiments"])} frozen models and scores '
+          f'the {catalogue["counts"]["test"]:,}-piece test partition.')
     print('It does not train, tune, select, or modify any model.')
     print('Output:',args.output)
     if not args.execute:return
     if args.acknowledge_final_test!=ACKNOWLEDGEMENT:
         parser.error(f'--acknowledge-final-test must equal {ACKNOWLEDGEMENT}')
     result=evaluate_release(catalogue,output=args.output,seed=args.seed,run_name=args.run_name,
-        device_name=args.device,batch_size=args.batch_size,workers=args.num_workers,resume=args.resume)
+        device_name=args.device,batch_size=args.batch_size,workers=args.num_workers,resume=args.resume,
+        catalogue_path=args.config)
     print(json.dumps(result,ensure_ascii=False,indent=2,allow_nan=False))
 
 

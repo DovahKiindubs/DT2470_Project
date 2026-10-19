@@ -96,8 +96,8 @@ def main(args):
     split_doc,metadata,ids,labels,indices=load_split(args.metadata,args.split)
     aligned = args.rhythm_dir is not None
     source = None
-    if args.feature_mode == 'cqt-rhythm' and not aligned:
-        raise ValueError('--feature-mode cqt-rhythm requires --rhythm-dir')
+    if args.feature_mode in ('rhythm', 'cqt-rhythm') and not aligned:
+        raise ValueError(f'--feature-mode {args.feature_mode} requires --rhythm-dir')
     if not aligned and (args.manifest is not None or args.cqt_fps != 5.0 or args.cqt_time_offset != 0.0):
         raise ValueError('Alignment options require --rhythm-dir')
     names = ('train','val','test') if args.evaluate_test else ('train','val')
@@ -107,7 +107,7 @@ def main(args):
         mean,std=load_aligned_normalization(args.normalization,source,args.split,args.metadata,
                                             split_doc['parts']['train'])
         datasets={name:AlignedSequenceDataset(ids[indices[name]],labels[indices[name]],source,
-                    mean,std,args.feature_mode=='cqt-rhythm') for name in names}
+                    mean,std,feature_mode=args.feature_mode) for name in names}
     else:
         with np.load(args.normalization,allow_pickle=False) as norm:
             mean,std=norm['mean'],norm['std']
@@ -121,7 +121,7 @@ def main(args):
                 raise ValueError('Invalid CQT normalization')
         datasets={name:CQTSequenceDataset(ids[indices[name]],labels[indices[name]],args.cqt_dir,mean,std)
                   for name in names}
-    input_channels=97 if args.feature_mode=='cqt-rhythm' else 88
+    input_channels={'cqt': 88, 'rhythm': 9, 'cqt-rhythm': 97}[args.feature_mode]
     train_sampler=LengthBucketBatchSampler(datasets['train'].lengths,args.batch_size,args.seed,True)
     device=choose_device(args.device)
     loader_kwargs={'collate_fn':collate_sequences,'num_workers':args.num_workers,
@@ -187,7 +187,8 @@ def main(args):
         batch_ids,y,pred=predict(model,loaders[name],device,amp_enabled)
         predictions[name]=[{'id':key,'true_grade':int(t),'score':float(p)} for key,t,p in zip(batch_ids,y,pred)]
         if name=='test': results['test']=evaluate(y,pred)
-    config={'feature_group':('cqt_rhythm_sequence' if input_channels==97 else
+    config={'feature_group':('rhythm_sequence_aligned' if args.feature_mode=='rhythm' else
+                             'cqt_rhythm_sequence' if input_channels==97 else
                              'cqt_sequence_aligned' if aligned else 'cqt_sequence'),
         'model':'Conv1d x2 + BiGRU + masked attention + linear head',
         'architecture':{'input_bins':input_channels,'conv_channels':args.conv_channels,'conv_kernel':5,'conv_time_stride':4,
@@ -232,7 +233,7 @@ if __name__=='__main__':
     p.add_argument('--metadata',type=Path,default=ROOT/'datasets/metadata/new_clean_data.json')
     p.add_argument('--split',type=Path,default=ROOT/'datasets/splits/cqt_composer_split.json')
     p.add_argument('--normalization',type=Path,default=ROOT/'datasets/features/cqt_train_normalization.npz')
-    p.add_argument('--feature-mode',choices=['cqt','cqt-rhythm'],default='cqt')
+    p.add_argument('--feature-mode',choices=['cqt','rhythm','cqt-rhythm'],default='cqt')
     p.add_argument('--rhythm-dir',type=Path,default=None,
                    help='Also supply for CQT-only control to use identical common-time cropping')
     p.add_argument('--manifest',type=Path,default=None,help='Defaults to the manifest recorded in the split')

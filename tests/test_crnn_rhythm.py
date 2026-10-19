@@ -109,7 +109,7 @@ def test_source_hashes_normalization_and_both_dataset_modes(tmp_path):
 
 
 def test_crnn_accepts_88_and_97_channels_and_rejects_mixed_batch():
-    for channels in (88,97):
+    for channels in (9,88,97):
         batch=[(torch.randn(channels,20),torch.tensor(1.),'a'),
                (torch.randn(channels,25),torch.tensor(2.),'b')]
         x,lengths,y,ids=collate_sequences(batch)
@@ -204,8 +204,11 @@ def test_real_cli_prepare_both_modes_and_checkpoint_roundtrip(tmp_path):
     source=AlignedFeatureSource(ids,labels,cqt_dir,rhythm_dir,meta,split,manifest_path=manifest)
     ds0=AlignedSequenceDataset(['b'],[3],source,mean,std,False)
     ds1=AlignedSequenceDataset(['b'],[3],source,mean,std,True)
+    ds2=AlignedSequenceDataset(['b'],[3],source,mean,std,feature_mode='rhythm')
     torch.testing.assert_close(ds0[0][0],ds1[0][0][:88],rtol=0,atol=0)
-    for mode,ds,channels in [('cqt',ds0,88),('cqt-rhythm',ds1,97)]:
+    torch.testing.assert_close(ds2[0][0],ds1[0][0][88:],rtol=0,atol=0)
+    assert ds0.lengths == ds1.lengths == ds2.lengths
+    for mode,ds,channels in [('cqt',ds0,88),('cqt-rhythm',ds1,97),('rhythm',ds2,9)]:
         output=tmp_path/('run_'+mode)
         command=aligned_args+['--normalization',str(norm),'--feature-mode',mode,
             '--device','cpu','--num-workers','0','--batch-size','2','--max-epochs','1',
