@@ -1,0 +1,33 @@
+{
+  "id": "Handel G.Fugue in F major HWV 611",
+  "reason": "from_error:structure_improved",
+  "y": 8,
+  "preds_hgb": {
+    "hgb_cqt": 3.6318698020764137,
+    "hgb_cqt_rhythm": 3.270736800650204,
+    "hgb_cqt_structure": 6.766777804780638,
+    "hgb_cqt_rhythm_structure": 6.598793642995648
+  },
+  "timing": {
+    "meta_duration": 183.56,
+    "bounds": null,
+    "cqt_sec": 181.2,
+    "mp3_sec": 181.2781859410431,
+    "align_risk": false
+  },
+  "repeat": {
+    "sim": 0.9405779288090101,
+    "a": [
+      9.205532879818595,
+      18.41106575963719
+    ],
+    "b": [
+      174.9051247165533,
+      181.2781859410431
+    ]
+  },
+  "listening": "done",
+  "verdict": "rejected",
+  "note": "整图自相似但自动窗不像",
+  "ssm_png": "ssm_Handel_G_Fugue_in_F_major_HWV_611_v4.png"
+}

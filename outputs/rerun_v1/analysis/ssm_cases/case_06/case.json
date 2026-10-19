@@ -1,0 +1,33 @@
+{
+  "id": "Rollin C.Bank of the Oise at Auvers",
+  "reason": "from_error:structure_improved",
+  "y": 3,
+  "preds_hgb": {
+    "hgb_cqt": 6.791864317080575,
+    "hgb_cqt_rhythm": 6.839497074479704,
+    "hgb_cqt_structure": 3.0640987285016306,
+    "hgb_cqt_rhythm_structure": 4.253133862277334
+  },
+  "timing": {
+    "meta_duration": null,
+    "bounds": null,
+    "cqt_sec": 69.8,
+    "mp3_sec": 69.91529166666666,
+    "align_risk": false
+  },
+  "repeat": {
+    "sim": 0.998074146711853,
+    "a": [
+      0.0,
+      6.281451985677083
+    ],
+    "b": [
+      39.87356477864583,
+      48.33986962890624
+    ]
+  },
+  "listening": "done",
+  "verdict": "confirmed",
+  "ssm_png": "ssm_Rollin_C_Bank_of_the_Oise_at_Auvers_v4.png",
+  "note": "重复清晰；加结构纠偏"
+}

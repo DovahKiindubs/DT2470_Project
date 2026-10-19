@@ -1,0 +1,33 @@
+{
+  "id": "Czerny C.Study in C major Op 553 No 1",
+  "reason": "from_error:baseline_large_err",
+  "y": 9,
+  "preds_hgb": {
+    "hgb_cqt": 2.604890599886987,
+    "hgb_cqt_rhythm": 3.4344476455605926,
+    "hgb_cqt_structure": 3.5150332623380582,
+    "hgb_cqt_rhythm_structure": 3.2652590744735823
+  },
+  "timing": {
+    "meta_duration": 51.8,
+    "bounds": null,
+    "cqt_sec": 52.4,
+    "mp3_sec": 52.523537414965986,
+    "align_risk": false
+  },
+  "repeat": {
+    "sim": 0.9885836163188261,
+    "a": [
+      5.949931972789115,
+      13.95156462585034
+    ],
+    "b": [
+      34.05823129251701,
+      42.05986394557823
+    ]
+  },
+  "listening": "done",
+  "verdict": "confirmed",
+  "ssm_png": "ssm_Czerny_C_Study_in_C_major_Op_553_No_1_v4.png",
+  "note": "自动段听感成立；时长正常仍被低估"
+}

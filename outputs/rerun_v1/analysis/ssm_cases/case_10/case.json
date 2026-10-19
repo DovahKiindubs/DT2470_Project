@@ -1,0 +1,33 @@
+{
+  "id": "Ravel M.Prelude (1913)",
+  "reason": "from_error:structure_worsened",
+  "y": 7,
+  "preds_hgb": {
+    "hgb_cqt": 6.632453078773779,
+    "hgb_cqt_rhythm": 6.009070549072069,
+    "hgb_cqt_structure": 3.9333184640148717,
+    "hgb_cqt_rhythm_structure": 4.270671719461844
+  },
+  "timing": {
+    "meta_duration": null,
+    "bounds": null,
+    "cqt_sec": 74.4,
+    "mp3_sec": 74.594125,
+    "align_risk": false
+  },
+  "repeat": {
+    "sim": 0.9990242257497165,
+    "a": [
+      0.0,
+      6.993199218750001
+    ],
+    "b": [
+      20.396831054687503,
+      28.84694677734375
+    ]
+  },
+  "listening": "done",
+  "verdict": "partial",
+  "ssm_png": "ssm_Ravel_M_Prelude_1913_v4.png",
+  "note": "RESULTS 原 pending；按听完收束为 partial（结构重复不强/自动段弱支持）"
+}

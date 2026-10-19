@@ -1,0 +1,38 @@
+{
+  "id": "Villa-Lobos H.O Polichinello No 7 from Prole do bebe Volume 1",
+  "reason": "from_error:structure_improved",
+  "y": 9,
+  "preds_hgb": {
+    "hgb_cqt": 2.9941089187670746,
+    "hgb_cqt_rhythm": 4.38391089018081,
+    "hgb_cqt_structure": 7.549857409131728,
+    "hgb_cqt_rhythm_structure": 7.86365429301006
+  },
+  "timing": {
+    "meta_duration": 737.36,
+    "bounds": [
+      "start_end",
+      685.0,
+      739.0,
+      54.0
+    ],
+    "cqt_sec": 53.8,
+    "mp3_sec": 54.0,
+    "align_risk": false
+  },
+  "repeat": {
+    "sim": 0.956799709884663,
+    "a": [
+      0.0,
+      6.1171875
+    ],
+    "b": [
+      36.4921875,
+      44.71875
+    ]
+  },
+  "listening": "done",
+  "verdict": "partial",
+  "ssm_png": "ssm_Villa_Lobos_H_O_Polichinello_No_7_from_Prole_do_bebe_Volume__v4.png",
+  "note": "自动段部分像；加结构后预测改善"
+}
