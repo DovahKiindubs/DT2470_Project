@@ -1,0 +1,340 @@
+{
+  "figure_audio": {
+    "Tan C.The Wind from A Childs Garden of Verses": {
+      "path": "datasets\\audio\\mp3_pieces\\Tan C.The Wind from A Childs Garden of Verses.mp3",
+      "seconds": 44.28045351473923,
+      "sample_rate": 44100,
+      "difficulty_grade": 2,
+      "current_audio_sha256": "a4157bc98f05d9996ddb22a65ac1ed657ef6996255765d14d1098ae9882bc01c",
+      "old_audio_sha256": {
+        "rhythm": "a4157bc98f05d9996ddb22a65ac1ed657ef6996255765d14d1098ae9882bc01c",
+        "structure": "a4157bc98f05d9996ddb22a65ac1ed657ef6996255765d14d1098ae9882bc01c"
+      },
+      "same_as_rerun_v1_audio": {
+        "rhythm": true,
+        "structure": true
+      },
+      "rhythm_display": {
+        "onsets": 78,
+        "onsets_per_sec": 1.7614995739381227,
+        "eight_bin_density": [
+          0.5419998689040377,
+          2.7099993445201886,
+          2.890665967488202,
+          3.0713325904562137,
+          0.9033331148400627,
+          1.4453329837441014,
+          2.529332721552176,
+          0.0
+        ],
+        "tempogram_shape": [
+          192,
+          2215
+        ],
+        "ioi_median_seconds": 0.2400000000000002,
+        "density_bin_std": 1.1127876087045505,
+        "tempogram_lag25_mean": 0.5254165226249495,
+        "tempogram_lag25_std": 0.18096823381632487
+      }
+    },
+    "Scriabin A.Prelude - op 11 no 17 Ab major": {
+      "path": "datasets\\audio\\mp3_pieces\\Scriabin A.Prelude - op 11 no 17 Ab major.mp3",
+      "seconds": 44.0,
+      "sample_rate": 48000,
+      "difficulty_grade": 8,
+      "current_audio_sha256": "47dc0fd90171ab2e0921e527fb342885b8d3d53f086754b3c2dc284c00b5c448",
+      "old_audio_sha256": {
+        "rhythm": "4f2b5766427cf5518865147d18fff672979d8c7be9861731e86c4e407c0614d5",
+        "structure": "4f2b5766427cf5518865147d18fff672979d8c7be9861731e86c4e407c0614d5"
+      },
+      "same_as_rerun_v1_audio": {
+        "rhythm": false,
+        "structure": false
+      },
+      "rhythm_display": {
+        "onsets": 157,
+        "onsets_per_sec": 3.5681818181818183,
+        "eight_bin_density": [
+          2.0,
+          2.1818181818181817,
+          1.4545454545454546,
+          1.4545454545454546,
+          5.818181818181818,
+          5.090909090909091,
+          4.909090909090909,
+          5.636363636363637
+        ],
+        "tempogram_shape": [
+          192,
+          2201
+        ],
+        "ioi_median_seconds": 0.1800000000000015,
+        "density_bin_std": 1.8293689920546126,
+        "tempogram_lag25_mean": 0.578821428041767,
+        "tempogram_lag25_std": 0.11621264407419322
+      }
+    },
+    "Rollin C.Bank of the Oise at Auvers": {
+      "path": "datasets\\audio\\mp3_pieces\\Rollin C.Bank of the Oise at Auvers.mp3",
+      "seconds": 69.91529166666666,
+      "sample_rate": 48000,
+      "difficulty_grade": 3,
+      "current_audio_sha256": "66a828ca4c38ab55d16abfdb77aa0f4aa3fad3213b6586377ed7e79bc1f6bd74",
+      "old_audio_sha256": {
+        "rhythm": "66a828ca4c38ab55d16abfdb77aa0f4aa3fad3213b6586377ed7e79bc1f6bd74",
+        "structure": "66a828ca4c38ab55d16abfdb77aa0f4aa3fad3213b6586377ed7e79bc1f6bd74"
+      },
+      "same_as_rerun_v1_audio": {
+        "rhythm": true,
+        "structure": true
+      },
+      "structure_display": {
+        "ssm_offdiagonal_mean": 0.629029187349631,
+        "recurrence_rate": 0.32340686274509806,
+        "novelty_mean": 0.2965498080985978,
+        "novelty_std": 0.1374803748384035,
+        "novelty_peak_density": 0.1573332491044222,
+        "pooled_frames": 256,
+        "pooled_frame_seconds": 0.27310660807291665,
+        "novelty_half_window_seconds": 2.184852864583333,
+        "novelty_peak_times": [
+          5.871792073567708,
+          8.329751546223958,
+          11.880137451171874,
+          14.61120353190104,
+          15.703629964192707,
+          44.106717203776036,
+          47.38399650065104,
+          49.56884936523437,
+          52.299915445963535,
+          54.48476831054687,
+          61.85864672851562
+        ],
+        "no_normalization_after_pooling": true
+      }
+    },
+    "Ravel M.Prelude (1913)": {
+      "path": "datasets\\audio\\mp3_pieces\\Ravel M.Prelude (1913).mp3",
+      "seconds": 74.594125,
+      "sample_rate": 48000,
+      "difficulty_grade": 7,
+      "current_audio_sha256": "721256627d5c98af9ae21dcbb6030aa9444bf7f2d64f56314a3219db42c0701f",
+      "old_audio_sha256": {
+        "rhythm": "721256627d5c98af9ae21dcbb6030aa9444bf7f2d64f56314a3219db42c0701f",
+        "structure": "721256627d5c98af9ae21dcbb6030aa9444bf7f2d64f56314a3219db42c0701f"
+      },
+      "same_as_rerun_v1_audio": {
+        "rhythm": true,
+        "structure": true
+      },
+      "structure_display": {
+        "ssm_offdiagonal_mean": 0.5040967518565643,
+        "recurrence_rate": 0.13305759803921569,
+        "novelty_mean": 0.3154226428245517,
+        "novelty_std": 0.13028116564952832,
+        "novelty_peak_density": 0.1340588149535905,
+        "pooled_frames": 256,
+        "pooled_frame_seconds": 0.29138330078125,
+        "novelty_half_window_seconds": 2.33106640625,
+        "novelty_peak_times": [
+          4.8078244628906255,
+          23.16497241210938,
+          23.747739013671875,
+          24.621888916015628,
+          25.204655517578125,
+          26.66157202148438,
+          28.118488525390628,
+          29.575405029296878,
+          36.277220947265626,
+          55.21713549804688
+        ],
+        "no_normalization_after_pooling": true
+      }
+    }
+  },
+  "figure_files": [
+    "figures\\01_audio_quality.png",
+    "figures\\01_audio_quality.pdf",
+    "figures\\02_onsets_density.png",
+    "figures\\02_onsets_density.pdf",
+    "figures\\03_tempogram.png",
+    "figures\\03_tempogram.pdf",
+    "figures\\04_structure_ssm.png",
+    "figures\\04_structure_ssm.pdf",
+    "figures\\05_error_analysis.png",
+    "figures\\05_error_analysis.pdf"
+  ],
+  "notes": [
+    "Audio illustrations use current MP3; predictions use frozen rerun_v1.",
+    "No model was trained; test predictions are never loaded.",
+    "Structure figures preserve the original pooling and novelty heuristic."
+  ],
+  "builder_sha256": "6da5f94d5a152184b9d7774ec372f43889ddbfe4f22aeacc4d4b4ecec4352d85",
+  "rerun_v1_validation": {
+    "cqt": {
+      "n": 2040,
+      "kendall_tau_c": 0.6573467416378317,
+      "spearman": 0.8018710059698907,
+      "mae": 1.3772186525075443,
+      "mse": 3.1239776788532665,
+      "acc_pm1": 0.6259803921568627,
+      "correlation_note": null
+    },
+    "cqt_rhythm": {
+      "n": 2040,
+      "kendall_tau_c": 0.6800857843137256,
+      "spearman": 0.8199851386072593,
+      "mae": 1.3079388262686091,
+      "mse": 2.8362846249988802,
+      "acc_pm1": 0.663235294117647,
+      "correlation_note": null
+    },
+    "cqt_structure": {
+      "n": 2040,
+      "kendall_tau_c": 0.6840009131103422,
+      "spearman": 0.8225071859191275,
+      "mae": 1.2712762694469009,
+      "mse": 2.736921818980654,
+      "acc_pm1": 0.6715686274509803,
+      "correlation_note": null
+    },
+    "cqt_rhythm_structure": {
+      "n": 2040,
+      "kendall_tau_c": 0.7057767685505575,
+      "spearman": 0.8402062311898221,
+      "mae": 1.2143175222002562,
+      "mse": 2.48134207313161,
+      "acc_pm1": 0.6872549019607843,
+      "correlation_note": null
+    }
+  },
+  "audio_audit": {
+    "切片规则": {
+      "full": 6675,
+      "only_start": 460,
+      "start_end": 752,
+      "only_end": 14
+    },
+    "比对结果": {
+      "match": 7672,
+      "missing_audio": 198,
+      "mismatch": 31
+    },
+    "本轮检查处理": {
+      "": 6238,
+      "replaced_with_full_source": 1610,
+      "redownloaded_and_repaired": 22,
+      "full_source_restored_cqt_mismatch": 31
+    },
+    "重下载状态": {
+      "": 7848,
+      "downloaded": 53
+    },
+    "新旧下载文件一致": {
+      "": 7848,
+      "False": 53
+    },
+    "rows": 7901,
+    "csv_sha256": "157426546507642d7db4db7239e9e88c02e77a9c9301b1bbe4a9702bba58b2b0",
+    "match_fraction_of_available": 0.995975593924445
+  },
+  "grade_bias": {
+    "cqt": [
+      2.3672056021352166,
+      1.807400298694617,
+      1.3356407971372075,
+      0.894957028446615,
+      0.5603240666230922,
+      0.17714628440179672,
+      -0.2660760218647771,
+      -0.3558941437999024,
+      -0.7343658865996553,
+      -1.5911513123319598,
+      -1.609010610114331
+    ],
+    "cqt_rhythm": [
+      2.0829202063536876,
+      1.7472127431549176,
+      1.4147400954193925,
+      0.8833939087605859,
+      0.6555790288245275,
+      0.25466647685846017,
+      -0.18230942955087126,
+      -0.213190210059042,
+      -0.6480524684702457,
+      -1.4379669974163691,
+      -1.5611982074940296
+    ],
+    "cqt_structure": [
+      1.7456407511979548,
+      1.2070880276681808,
+      0.9895340368840803,
+      0.6087151377717276,
+      0.57242503677637,
+      0.25497229984000125,
+      -0.06869352409253487,
+      -0.15457198642315204,
+      -0.5019701640437955,
+      -1.4571160855511462,
+      -1.5571308949574223
+    ],
+    "cqt_rhythm_structure": [
+      1.625716793323514,
+      1.184169113574058,
+      1.0287387635729157,
+      0.7409710432504234,
+      0.6546274987782985,
+      0.2713909511439091,
+      -0.005228120787056037,
+      -0.0918217095704405,
+      -0.46493398742120823,
+      -1.3737202661509484,
+      -1.4713616489611407
+    ]
+  },
+  "illustrative_cases": {
+    "Scriabin A.Prelude - op 11 no 17 Ab major": {
+      "true_grade": 8,
+      "baseline_prediction": 4.637056668070607,
+      "added_model": "cqt_rhythm",
+      "added_prediction": 6.804411123454879,
+      "absolute_error_change": -2.167354455384272
+    },
+    "Tan C.The Wind from A Childs Garden of Verses": {
+      "true_grade": 2,
+      "baseline_prediction": 2.260581619722318,
+      "added_model": "cqt_rhythm",
+      "added_prediction": 4.413084216881155,
+      "absolute_error_change": 2.152502597158837
+    },
+    "Rollin C.Bank of the Oise at Auvers": {
+      "true_grade": 3,
+      "baseline_prediction": 6.791864317080575,
+      "added_model": "cqt_structure",
+      "added_prediction": 3.0640987285016306,
+      "absolute_error_change": -3.727765588578944
+    },
+    "Ravel M.Prelude (1913)": {
+      "true_grade": 7,
+      "baseline_prediction": 6.632453078773779,
+      "added_model": "cqt_structure",
+      "added_prediction": 3.9333184640148717,
+      "absolute_error_change": 2.6991346147589077
+    },
+    "Bailey K.Scoobie du wup": {
+      "true_grade": 1,
+      "baseline_prediction": 4.530172755136552,
+      "added_model": "cqt_structure",
+      "added_prediction": 8.326338108333585,
+      "absolute_error_change": 3.7961653531970336
+    },
+    "Copland A.Piano Variations": {
+      "true_grade": 10,
+      "baseline_prediction": 1.8455596727488384,
+      "added_model": "cqt_structure",
+      "added_prediction": 2.0004614630700854,
+      "absolute_error_change": -0.1549017903212473
+    }
+  },
+  "audio_update_list_rows": 1241
+}
