@@ -42,7 +42,10 @@ dist/
 # Keep small summary metrics and report figures; exclude bulk local runs.
 *.log
 
-# Local audio feature refresh experiment (2026-10-19).
+# Local audio feature experiments; keep original caches tracked.
 /datasets/features/audio_refresh_20261019/
 /outputs/audio_refresh_20261019/
-/scripts/refresh_audio_features_hgb.py
+/datasets/features/audio_optimized_v1/
+/outputs/audio_optimized_v1/
+/datasets/features/cqt_activity_v1/
+/outputs/cqt_activity_v1/
