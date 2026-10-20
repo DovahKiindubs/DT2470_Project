@@ -1,0 +1,15 @@
+{
+  "test": {
+    "n": 1557,
+    "kendall_tau_c": 0.7169248703412893,
+    "spearman": 0.8484493334787707,
+    "mae": 1.152683892614503,
+    "mse": 2.291774984593901,
+    "acc_pm1": 0.7238278741168914,
+    "correlation_note": null
+  },
+  "test_evaluated": true,
+  "experiment_id": "early_cqt_rhythm",
+  "source_run": "outputs/rerun_v2/early/cqt_rhythm/seed_42_run_01",
+  "model_sha256": "f5f161a094a0d24d3e8628519a6e1c412f2c5ada28291ed31f4f0897d18ad4b0"
+}

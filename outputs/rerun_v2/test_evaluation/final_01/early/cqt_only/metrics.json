@@ -1,0 +1,15 @@
+{
+  "test": {
+    "n": 1557,
+    "kendall_tau_c": 0.7098609095022831,
+    "spearman": 0.8415675051197214,
+    "mae": 1.1970281876580564,
+    "mse": 2.3674059264294867,
+    "acc_pm1": 0.6955684007707129,
+    "correlation_note": null
+  },
+  "test_evaluated": true,
+  "experiment_id": "early_cqt",
+  "source_run": "outputs/rerun_v2/early/cqt_only/seed_42_run_01",
+  "model_sha256": "2cb9155f064accbd77ef7a9690bdce8ee98e1435de583122c6a37c81c81627de"
+}
