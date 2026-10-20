@@ -42,6 +42,10 @@ dist/
 # Keep small summary metrics and report figures; exclude bulk local runs.
 *.log
 
+# Keep only the SSM case summary tracked.
+/outputs/rerun_v1/analysis/ssm_cases/*
+!/outputs/rerun_v1/analysis/ssm_cases/RESULTS.md
+
 # Local audio feature experiments; keep original caches tracked.
 /datasets/features/audio_refresh_20261019/
 /outputs/audio_refresh_20261019/
