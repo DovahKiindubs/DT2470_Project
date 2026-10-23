@@ -1,56 +1,56 @@
-# 数据目录说明
+# Dataset Guide
 
-项目使用 PSyllabus 数据集进行钢琴演奏难度预测。metadata 共包含 7,901 条记录，难度标签字段为 `ps`，取值为 0–10。
+This project uses the PSyllabus dataset for piano performance difficulty prediction. The metadata contains 7,901 records. The difficulty label is stored in the `ps` field and ranges from 0 to 10.
 
-## 最终实验数据
+## Final Experimental Dataset
 
-最终十组实验使用冻结共同子集 `cqt_rhythm_common_v1`：
+The final ten experiments use the frozen common subset `cqt_rhythm_common_v1`:
 
-- 训练集：4,089 首
-- 验证集：2,040 首
-- 测试集：1,557 首
-- 总计：7,686 首
+- Training set: 4,089 pieces
+- Validation set: 2,040 pieces
+- Test set: 1,557 pieces
+- Total: 7,686 pieces
 
-划分文件位于：
+The split files are:
 
 ```text
 splits/cqt_rhythm_common_v1.json
 splits/cqt_rhythm_common_v1_manifest.json
 ```
 
-该子集继承原严格划分，只过滤缺少配对节奏特征或待核验的录音，不重新分配 train/val/test。
+This subset inherits the original strict split. It only removes pieces without paired rhythm features or recordings pending verification; it does not reassign samples among train, validation, and test sets.
 
-## 目录结构
+## Directory Structure
 
 ```text
 metadata/
-  new_clean_data.json        曲目metadata与难度标签
-  split_audio.json           数据集原始划分信息
+  new_clean_data.json        Piece metadata and difficulty labels
+  split_audio.json           Original dataset split information
 splits/
-  cqt_rhythm_common_v1.json  最终冻结划分
-  *_manifest.json            逐曲文件哈希与成员记录
+  cqt_rhythm_common_v1.json  Final frozen split
+  *_manifest.json            Per-piece file hashes and membership records
 features/
-  cqt/                       逐曲CQT序列，88×T，约5 fps
-  rhythm_windows/            逐曲9通道节奏窗口序列
-  cqt_hard_windows.npz       528维CQT汇总特征
-  rhythm_stats.npz           410维节奏汇总特征
-  structure_stats.npz        73维结构相关统计特征
-  *_normalization.npz        仅由训练集计算的归一化参数
-audio/                       可选原始音频，本项目包默认不包含
+  cqt/                       Per-piece CQT sequences, 88×T at about 5 fps
+  rhythm_windows/            Per-piece 9-channel rhythm-window sequences
+  cqt_hard_windows.npz       528-dimensional CQT summary features
+  rhythm_stats.npz           410-dimensional rhythm summary features
+  structure_stats.npz        73-dimensional structure-related statistics
+  *_normalization.npz        Normalization parameters computed on training data only
+audio/                       Optional original audio, not included by default
 ```
 
-## 获取与放置
+## Download and Placement
 
-PSyllabus 数据与预计算 CQT 可从项目对应的 Zenodo 数据页获取：
+The PSyllabus data and precomputed CQT files are available from the associated Zenodo and MIREX pages:
 
 - https://zenodo.org/records/14794592
 - https://music-ir.org/mirex/wiki/2026:Music_Performance_Difficulty_Prediction
 
-下载后请保持原始文件名，将 CQT `.bin` 放入 `features/cqt/`。节奏窗口序列由音频提取，放入 `features/rhythm_windows/`，并保留同目录的 `index.npz`。
+Keep the original file names after downloading. Place the CQT `.bin` files in `features/cqt/`. Rhythm-window sequences are extracted from audio and should be placed in `features/rhythm_windows/` together with `index.npz`.
 
-## 注意事项
+## Notes
 
-- `cqt/`、`rhythm_windows/` 和原始音频体积较大，默认由 `.gitignore` 排除。
-- metadata、split、manifest 和特征缓存带有哈希校验；不要静默替换内容。
-- 当前节奏与CQT对齐基于名义时间轴和共同起点，并未逐曲进行波形级验证。
-- 重新提取特征时应创建新版本，不覆盖冻结实验使用的文件。
+- `cqt/`, `rhythm_windows/`, and the original audio are large and excluded by `.gitignore` by default.
+- The metadata, split, manifest, and feature caches are protected by hash checks; do not replace them silently.
+- Rhythm–CQT alignment currently uses nominal timelines and a shared start point. It has not been verified against waveforms piece by piece.
+- Create a new version when regenerating features instead of overwriting files used by the frozen experiments.

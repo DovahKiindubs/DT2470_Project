@@ -1,19 +1,19 @@
-# 钢琴演奏难度预测
+# Piano Performance Difficulty Prediction
 
-DT2470 Music Informatics 课程项目。项目使用 PSyllabus 钢琴录音数据，根据音频预测 0–10 的有序演奏难度，并研究节奏与结构相关特征能否改善 CQT 基线。
+This is a DT2470 Music Informatics course project. It uses the PSyllabus solo-piano dataset to predict ordinal performance difficulty on a 0–10 scale and investigates whether explicit rhythm- and structure-related features improve upon a CQT baseline.
 
-## 方法
+## Methods
 
-- **HGB 回归**：使用固定长度特征，比较 CQT、节奏、结构及其组合。
-- **Early CRNN**：将 88 通道 CQT 与 9 通道节奏序列对齐后，在输入端拼接。
-- **Late Fusion CRNN**：CQT 与节奏分别编码，再融合高层表示。
-- **主要指标**：Kendall’s Tau-c；同时报告 Spearman、MAE、MSE 与 Acc±1。
+- **HGB regression:** compares fixed-length CQT, rhythm, and structure features and their combinations.
+- **Early CRNN:** aligns an 88-channel CQT sequence with a 9-channel rhythm sequence and concatenates them at the input level.
+- **Late Fusion CRNN:** encodes CQT and rhythm in separate branches before fusing their learned representations.
+- **Primary metric:** Kendall's Tau-c; Spearman correlation, MAE, MSE, and Acc±1 are also reported.
 
-全部实验使用同一冻结划分：训练 4,089 首、验证 2,040 首、测试 1,557 首，随机种子为 42。最终测试结果中，HGB 的 CQT＋节奏＋结构组合取得最高 Tau-c 0.7204。
+All experiments use the same frozen split: 4,089 training pieces, 2,040 validation pieces, and 1,557 test pieces, with random seed 42. On the final test set, HGB with CQT, rhythm, and structure features achieved the highest Tau-c of 0.7204.
 
-## 环境
+## Environment
 
-建议使用 Python 3.12，并在项目根目录创建虚拟环境：
+Python 3.12 is recommended. Create a virtual environment in the project root:
 
 ```bash
 python3.12 -m venv .venv
@@ -22,44 +22,44 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-CUDA 环境中的 PyTorch 请按服务器 CUDA 版本单独安装，避免直接复制其他系统的 `.venv`。`requirements.txt` 是本地开发环境快照，不保证在 Python 3.11 或不同 CUDA 环境中原样安装成功；服务器可按实际 Python/CUDA 版本调整依赖版本。
+For CUDA systems, install a PyTorch build compatible with the server's CUDA version instead of copying `.venv` from another machine. `requirements.txt` is a snapshot of the local development environment and may require version adjustments on Python 3.11 or a different CUDA setup.
 
-## 数据准备
+## Data Preparation
 
-数据目录和文件说明见 [`datasets/README.md`](datasets/README.md)。完整复现需要：
+See [`datasets/README.md`](datasets/README.md) for the data layout and file descriptions. A complete reproduction requires:
 
 - `datasets/features/cqt/*.bin`
-- `datasets/features/rhythm_windows/*.npz` 及 `index.npz`
+- `datasets/features/rhythm_windows/*.npz` and `index.npz`
 - `datasets/features/cqt_hard_windows.npz`
 - `datasets/features/rhythm_stats.npz`
 - `datasets/features/structure_stats.npz`
-- 两个归一化缓存、metadata、冻结 split 与 manifest
+- both normalization caches, metadata, the frozen split, and the manifest
 
-原始音频不是训练最终十组实验的必需输入；只有重新提取节奏或结构特征时才需要。
+The final ten experiments do not require the original audio. Audio is needed only when extracting rhythm or structure features again.
 
-## 复现实验
+## Reproducing the Experiments
 
-所有命令都在项目根目录执行，并显式使用最终配置：
+Run all commands from the project root and explicitly select the final experiment configuration:
 
 ```bash
-# 仅打印十组实验命令
+# Print the commands for all ten experiments without training
 python scripts/run_experiments.py --config configs/rerun_v2.json --dry-run
 
-# 校验文件、成员与哈希，不训练
+# Validate files, split membership, and hashes without training
 python scripts/run_experiments.py --config configs/rerun_v2.json --check
 
-# 顺序运行全部十组实验
+# Run all ten experiments sequentially
 python scripts/run_experiments.py --config configs/rerun_v2.json \
   --execute --device cuda --num-workers 4 --threads 4 \
   --seed 42 --run-name run_01
 
-# 汇总验证集结果
+# Summarize validation results
 python scripts/run_experiments.py --config configs/rerun_v2.json --summarize
 ```
 
-只运行某组时可使用 `--group hgb`、`--group early` 或 `--group late`。结果写入 `outputs/rerun_v2/`；同名目录不会被覆盖。
+Use `--group hgb`, `--group early`, or `--group late` to run only one group. Results are written to `outputs/rerun_v2/`; an existing run directory is never overwritten.
 
-模型全部冻结后，最终测试只运行一次：
+After all models have been frozen, run the final test evaluation once:
 
 ```bash
 python scripts/evaluate_test.py --config configs/rerun_v2.json \
@@ -68,18 +68,17 @@ python scripts/evaluate_test.py --config configs/rerun_v2.json \
   --seed 42 --run-name run_01
 ```
 
-测试脚本只加载保存的模型做推理，不重新训练或选参。
+The test script loads the saved models for inference only. It does not retrain models or select hyperparameters.
 
-## 目录
+## Project Structure
 
 ```text
-configs/   最终实验清单
-src/       特征、数据、模型、训练与评估实现
-scripts/   实验、测试和案例分析入口
-tests/     单元测试与合成数据回归测试
-datasets/  metadata、划分、特征缓存与本地大文件
-outputs/   实验结果（运行后生成）
-reports/   报告草稿与图表
+configs/   Final experiment catalogue
+src/       Feature, data, model, training, and evaluation code
+scripts/   Experiment, test, and case-analysis entry points
+tests/     Unit tests and synthetic-data regression tests
+datasets/  Metadata, splits, feature caches, and local large files
+outputs/   Experiment results generated at runtime
 ```
 
-源码职责见 [`src/README.md`](src/README.md)。
+See [`src/README.md`](src/README.md) for a source-code overview.

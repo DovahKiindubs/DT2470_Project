@@ -1,35 +1,35 @@
-# 源码导航
+# Source Code Guide
 
-源码按“特征 → 数据 → 模型 → 训练 → 实验调度”分层。根层的部分同名脚本是兼容入口，实际实现位于子目录中，请勿随意删除。
+The source code is organized as feature extraction → data handling → models → training → experiment orchestration. Some top-level files are compatibility entry points; the actual implementations live in the subdirectories and should not be removed without checking their callers.
 
-## 目录职责
+## Directory Responsibilities
 
 - `features/`
-  - `cqt.py`：CQT读取与全局统计。
-  - `cqt_windows.py`：滑窗及高活动窗口池化。
-  - `rhythm.py`：410维节奏汇总特征。
-  - `rhythm_windows.py`：9通道节奏时序特征。
-  - `structure.py`：基于chroma自相似矩阵的73维结构相关统计。
+  - `cqt.py`: CQT loading and global statistics.
+  - `cqt_windows.py`: sliding-window and high-activity-window pooling.
+  - `rhythm.py`: 410-dimensional rhythm summary features.
+  - `rhythm_windows.py`: 9-channel temporal rhythm features.
+  - `structure.py`: 73-dimensional structure-related statistics derived from chroma self-similarity matrices.
 - `data/`
-  - metadata、划分和哈希校验。
-  - HGB特征拼接。
-  - Early Fusion时间对齐与Late Fusion双输入数据集。
-  - 训练集归一化与音频预处理。
+  - Metadata, split, and hash validation.
+  - Feature concatenation for HGB.
+  - Temporal alignment for Early Fusion and paired inputs for Late Fusion.
+  - Training-set normalization and audio preprocessing.
 - `models/`
-  - `model_crnn.py`：Conv1D、BiGRU、masked attention与回归头。
-  - `model_late_fusion.py`：CQT和节奏独立分支及表示融合。
+  - `model_crnn.py`: Conv1D, BiGRU, masked attention, and regression head.
+  - `model_late_fusion.py`: separate CQT and rhythm branches with representation-level fusion.
 - `training/`
-  - `hgb.py`：Histogram-based Gradient Boosting回归。
-  - `crnn.py`：Early Fusion及单输入CRNN训练。
-  - `late_fusion.py`：双分支Late Fusion训练。
-  - `ridge.py`：早期线性基线，保留用于追溯。
-- `reporting/metrics.py`：Tau-c、Spearman、MAE、MSE与Acc±1。
-- `experiments/suite.py`：十组实验调度、输入预检、状态记录和汇总。
-- `experiments/evaluate_test.py`：冻结模型的最终test-only推理。
+  - `hgb.py`: Histogram-based Gradient Boosting regression.
+  - `crnn.py`: Early Fusion and single-input CRNN training.
+  - `late_fusion.py`: two-branch Late Fusion training.
+  - `ridge.py`: early linear baseline retained for traceability.
+- `reporting/metrics.py`: Tau-c, Spearman, MAE, MSE, and Acc±1.
+- `experiments/suite.py`: orchestration, input checks, run-state tracking, and summaries for all ten experiments.
+- `experiments/evaluate_test.py`: final test-only inference for frozen models.
 
-## 推荐入口
+## Recommended Entry Points
 
-在项目根目录执行：
+Run these commands from the project root:
 
 ```bash
 python scripts/run_experiments.py --config configs/rerun_v2.json --dry-run
@@ -40,7 +40,7 @@ python scripts/run_experiments.py --config configs/rerun_v2.json --execute --gro
 python scripts/run_experiments.py --config configs/rerun_v2.json --summarize
 ```
 
-直接运行分层模块时，使用：
+To run the layered modules directly:
 
 ```bash
 PYTHONPATH=src python -m training.crnn --help
@@ -48,9 +48,9 @@ PYTHONPATH=src python -m training.late_fusion --help
 PYTHONPATH=src python -m training.hgb --help
 ```
 
-## 兼容入口
+## Compatibility Entry Points
 
-以下根层文件转发到分层实现，用于兼容旧测试和历史命令：
+The following top-level files forward to the layered implementations and are retained for compatibility with older tests and commands:
 
 ```text
 train.py / train_hgb.py / train_crnn.py / train_late_fusion.py
@@ -60,11 +60,11 @@ prepare_crnn.py / prepare_late_fusion.py / preprocess_audio.py
 summarize_experiments.py
 ```
 
-## 实验边界
+## Experimental Scope
 
-- 最终配置为 `configs/rerun_v2.json`，包含HGB 4组、Early 3组和Late 3组。
-- 全部实验共享冻结共同子集，随机种子为42。
-- HGB使用固定长度CQT、节奏和结构统计。
-- CRNN使用保留时间顺序的CQT与节奏序列；当前结构特征是整曲73维汇总，因此未直接送入CRNN。
-- 默认训练入口只评估validation；test通过独立脚本在模型冻结后运行。
-- 跨Early与Late的性能差异还包含输入时间网格、分支宽度和预测头差异，不能全部归因于融合位置。
+- The final configuration is `configs/rerun_v2.json`, containing four HGB, three Early, and three Late experiments.
+- All experiments share the frozen common subset and use random seed 42.
+- HGB uses fixed-length CQT, rhythm, and structure statistics.
+- The CRNN models use CQT and rhythm sequences that preserve temporal order. The current structure representation is a 73-dimensional piece-level summary, so it is not fed directly into the CRNN.
+- The default training workflow evaluates the validation set only. The test set is evaluated with a separate script after model freezing.
+- Performance differences between Early and Late Fusion also reflect differences in time grids, branch capacity, and prediction heads; they cannot be attributed entirely to the fusion point.
